@@ -54,6 +54,7 @@ struct TrackBox{
   unsigned int size;
   //tkhd
   //mdia
+  //edts
 }trak;
 
 struct TrackHeaderBox{
@@ -159,6 +160,10 @@ struct NullMediaHeaderBox{
 struct SampleTableBox{
   unsigned int size;
   //stsd
+  //stts
+  //ctts
+  //stss
+  //stsh
 }stbl;
 
 struct SampleDescriptionBox{
@@ -223,6 +228,7 @@ struct CleanApertureBox{
 }clap;
 
 struct VisualSampleEntry{
+  unsigned int size;
   // unsigned int pre_defined=0; //16비트
   const unsigned int reserved=0; //16비트
   //unsigned int pre_defined[3]=0; //96비트
@@ -240,6 +246,7 @@ struct VisualSampleEntry{
 };
 
 struct AudioSampleEntry{
+  unsigned int size;
   // const unsigned int reserved[2]=0; //32비트
   unsigned int channelcount=2; //16비트
   unsigned int samplesize=16; //16비트
@@ -248,8 +255,115 @@ struct AudioSampleEntry{
   // unsigned int samplerate= {default samplerate of media}<<16; //32비트
 };
 
-struct SampleDescriptionBox
+struct DegradationPriorityBox{
+  unsigned int size;
+  unsigned int* priority; //16비트
+  // sampe_count 값에 맞춰 배열 동적 할당
+}stdp;
 
+struct SampleScaleBox{
+  unsigned int size;
+  // bit reserved=0; //7비트
+  // bit constraint_flag; //1비트
+  unsigned int scale_method; //8비트
+  int display_center_x; //16비트
+  int display_center_y; //16비트
+};
+
+struct TimeToSampleBox{
+  unsigned int size;
+  unsigned int entry_count;//32비트
+  unsigned int sample_count;//32비트 샘플 GOP 테이블의 개수
+  unsigned int sample_delta; //32비트 샘플 GOP 테이블의 델타 값
+  //공식문서 32페이지 참조
+}stts;
+
+struct CompositionTimetoSampleBox{
+  unsigned int size;
+  unsigned int entry_count; //32비트
+  unsigned int sample_count; //32비트
+  unsigned int sample_offset; //32비트
+  //공식문서 33페이지 참조
+}ctts;
+
+struct SyncSampleBox{
+  unsigned int size;
+  unsigned int entry_count;// 32비트
+  unsigned int sample_number; //32비트 샘플 개수
+}stss;
+
+struct ShadowSyncSampleBox{
+  unsigned int size;
+  unsigned int entry_count; //32비트 엔트리 개수
+  unsigned int shadowed_sample_number; //32비트 alternative sync sample이 있는 샘플의 개수
+  unsigned int sync_sample_number; //32비트 alternative sync sample의 개수
+}stsh;
+
+struct EditBox{
+  unsigned int size;
+  //elst
+}edts;
+
+struct EditListBox{
+  unsigned int size;
+  unsigned int entry_count; //32비트
+  //version 1: 64 64
+  //version 0: 32 32
+  unsigned int segment_duration;
+  int media_time;
+
+  int media_rate_integer; //16비트
+  int media_rate_fraction=0; //16비트
+
+}eslt;
+
+struct TrackDataLayoutStructures{
+  unsigned int size;
+}dinf;
+
+struct DataEntryUrlBox{
+  unsigned int size;
+  string location;
+}url;
+
+struct DataEntryUrnBox{
+  unsigned int size;
+  string name;
+  string location;
+}urn;
+
+struct DataReferenceBox{
+  unsigned int size;
+  unsigned int entry_count; //32비트
+  DataEntryBox* data_entry; //entry_count만큼 malloc
+}dref;
+
+struct SampleSizeBox{
+  unsigned int size;
+  unsigned int sample_size; //32비트
+  unsigned int sample_count; //32비트
+}stsz;
+
+struct CompactSampleSizeBox{
+  unsigned int size;
+  unsigned int reserved=0; //24비트
+  unsigned int field_size; //8비트
+  unsigned int sample_count; //32비트
+  unsigned int entry_size; //24비트 샘플 크기 측정
+}stz2;
+
+struct SampleToChunkBox{
+  unsigned int size;
+  unsigned int entry_count; //32비트
+  //entry_count만큼 밑 코드 반복
+  unsigned int first_chunk; //32비트
+  unsigned int samples_per_chunk; //32비트
+  unsigned int sample_description_index; 32비트
+
+}stsc;
+
+
+//40페이지 완료
 
 // 메인 함수
 int main(){
