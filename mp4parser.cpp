@@ -358,8 +358,8 @@ struct SampleToChunkBox{
   //entry_count만큼 밑 코드 반복
   unsigned int first_chunk; //32비트
   unsigned int samples_per_chunk; //32비트
-  unsigned int sample_description_index; 32비트
-
+  unsigned int sample_description_index; //32비트
+  //40페이지 참조
 }stsc;
 
 
