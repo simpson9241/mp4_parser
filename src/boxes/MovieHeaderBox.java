@@ -16,7 +16,22 @@ public class MovieHeaderBox extends FullBox{
 	public MovieHeaderBox(String boxtype, long v, long f) { //"mvhd", version, 0 version은 type 뒤에 바로 1바이트
 		super(boxtype, v, f);
 		
-		
+	}
+
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return "\tmvhd\n"+
+				"\t\tSize: "+size+
+				"\n\t\tType: MovieHeaderBox"+
+				"\n\t\tVersion: "+ version+
+				"\n\t\tCreation Time: "+ creation_time+
+				"\n\t\tModification Time: "+ modification_time+
+				"\n\t\tTime Scale: "+timescale+
+				"\n\t\tDuration: "+duration+
+				"\n\t\tRate: "+rate+
+				"\n\t\tVolume: "+volume+
+				"\n\t\tNext Track ID: "+next_track_ID+"\n";
 	}
 
 

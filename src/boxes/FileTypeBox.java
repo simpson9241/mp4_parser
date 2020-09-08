@@ -15,10 +15,12 @@ public class FileTypeBox extends Box{
 	@Override
 	public String toString() {
 		// TODO Auto-generated method stub
-		return "Type: FileTypeBox\n"+
-				"Major Brand: "+ major_brand+
-				"\nMinor Version: "+minor_version+
-				"\nCompatible Brands: "+compatible_brands+"\n";
+		return "ftyp\n"+
+				"\tSize: "+size+
+				"\n\tType: FileTypeBox\n"+
+				"\tMajor Brand: "+ major_brand+
+				"\n\tMinor Version: "+minor_version+
+				"\n\tCompatible Brands: "+compatible_brands+"\n";
 	}
 	
 }
