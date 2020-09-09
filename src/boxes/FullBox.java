@@ -8,5 +8,4 @@ public class FullBox extends Box{
 		this.version=v; //8비트
 		this.flags=f; //24비트
 	}
-
 }
