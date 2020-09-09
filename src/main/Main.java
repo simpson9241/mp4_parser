@@ -4,6 +4,8 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.TimeZone;
 
 public class Main {
 
@@ -55,6 +57,10 @@ public class Main {
 				
 				System.out.println(moov);
 			}else if(type.equals("mvhd")){
+				long creation_time;
+				long modification_time;
+				
+				
 				byte[] version=new byte[1];
 				fis.read(version);
 				long v=Util.ByteArrayToLong(version);
@@ -65,45 +71,61 @@ public class Main {
 				mvhd.size=size;
 				
 				if(v==1) {
-					byte[] creation_time=new byte[8];
-					fis.read(creation_time);
-					mvhd.creation_time=Util.ByteArrayToLong(creation_time);
-					byte[] modification_time=new byte[8];
-					fis.read(modification_time);
-					mvhd.modification_time=Util.ByteArrayToLong(modification_time);
+					byte[] creation_time_byte=new byte[8];
+					fis.read(creation_time_byte);
+					creation_time=Util.ByteArrayToLong(creation_time_byte);
+					byte[] modification_time_byte=new byte[8];
+					fis.read(modification_time_byte);
+					modification_time=Util.ByteArrayToLong(modification_time_byte);
 					byte[] duration=new byte[8];
+					byte[] timescale=new byte[4];
+					fis.read(timescale);
+					mvhd.timescale=Util.ByteArrayToLong(timescale);
 					fis.read(duration);
 					mvhd.duration=Util.ByteArrayToLong(duration);
 				}else {
-					byte[] creation_time=new byte[4];
-					fis.read(creation_time);
-					mvhd.creation_time=Util.ByteArrayToLong(creation_time);
-					byte[] modification_time=new byte[4];
-					fis.read(modification_time);
-					mvhd.modification_time=Util.ByteArrayToLong(modification_time);
+					byte[] creation_time_byte=new byte[4];
+					fis.read(creation_time_byte);
+					creation_time=Util.ByteArrayToLong(creation_time_byte);
+					byte[] modification_time_byte=new byte[4];
+					fis.read(modification_time_byte);
+					modification_time=Util.ByteArrayToLong(modification_time_byte);
+					byte[] timescale=new byte[4];
+					fis.read(timescale);
+					mvhd.timescale=Util.ByteArrayToLong(timescale);
 					byte[] duration=new byte[4];
 					fis.read(duration);
 					mvhd.duration=Util.ByteArrayToLong(duration);
 				}
 				
-				byte[] timescale=new byte[4];
-				fis.read(timescale);
-				mvhd.timescale=Util.ByteArrayToLong(timescale);
 				
+				byte[] rate_1=new byte[2];
+				fis.read(rate_1);
+				byte[] rate_2=new byte[2];
+				fis.read(rate_2);
+				mvhd.rate=(double)Util.ByteArrayToLong(rate_1)+((double)Util.ByteArrayToLong(rate_2))*0.01;
 				
-				byte[] rate=new byte[4];
-				fis.read(rate);
-				mvhd.rate=Util.ByteArrayToLong(rate);
-				
-				byte[] volume=new byte[2];
-				fis.read(volume);
-				mvhd.creation_time=Util.ByteArrayToLong(volume);
+				byte[] volume_1=new byte[1];
+				fis.read(volume_1);
+				byte[] volume_2=new byte[1];
+				fis.read(volume_2);
+				mvhd.volume=(double)Util.ByteArrayToLong(volume_1)+((double)Util.ByteArrayToLong(volume_2))*0.1;
 				
 				fis.skip(70);
 				
 				byte[] next_track_id=new byte[4];
 				fis.read(next_track_id);
 				mvhd.next_track_ID=Util.ByteArrayToLong(next_track_id);
+				
+				Calendar cal=Calendar.getInstance();
+				cal.set(1904, 0, 1,0,0,0);
+				cal.add(Calendar.SECOND, (int)creation_time);
+				mvhd.creation_time=cal.getTime().toString();
+				
+				cal.set(1904, 0, 1,0,0,0);
+				cal.add(Calendar.SECOND, (int)modification_time);
+				mvhd.modification_time=cal.getTime().toString();
+				
 				
 				System.out.println(mvhd);
 			}else {
