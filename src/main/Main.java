@@ -128,6 +128,16 @@ public class Main {
 				
 				
 				System.out.println(mvhd);
+			}else if(type.equals("free")){
+				boxes.FreeSpaceBox free=new boxes.FreeSpaceBox("free");
+				free.size=size;
+				fis.skip(free.size-8);
+				System.out.println(free);
+			}else if(type.equals("skip")){
+				boxes.FreeSpaceBox skip=new boxes.FreeSpaceBox("skip");
+				skip.size=size;
+				fis.skip(skip.size-8);
+				System.out.println(skip);
 			}else {
 				System.out.println(size);
 				System.out.println(type);
@@ -135,7 +145,7 @@ public class Main {
 			}
 		}
 		fis.close();
-		System.out.println("finished");
+		System.out.println("\nfinished");
 
 	}
 
