@@ -15,6 +15,8 @@ public class Main {
 	//읽어들이는거 함수 따로 빼기
 	//박스 리스트나 다른걸로 해서 객체 계속 가지고 있기
 	//계층 구조 상황에 따라서 다름 -> 어느 박스에 있는지 확인할 플래그 변수 생성?
+	//변수의 값에 따라 for i는 변수의 값까지 반복해서 \t로 이루어진 스트링 생성
+	//\t의 자리에 스트링 넣어서 출력
 	public static void main(String[] args) throws Exception{
 		File file=new File("BigBuckBunny.mp4");
 		if(file.isFile()) {
