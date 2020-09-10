@@ -10,13 +10,14 @@ public class SampletoTableBox extends FullBox{
 		super(boxtype, v, f);
 	}
 	
-	public String toString(String tab) {
+	@Override
+	public String toString() {
 		// TODO Auto-generated method stub
-		return tab+"\t\t\t\t\tstts\n"+
-				tab+"\t\t\t\t\t\tSize: "+size+"\n"+
-				tab+"\t\t\t\t\t\tType: SampletoTableBox"+"\n"+
-				tab+"\t\t\t\t\t\tVersion: "+ version+"\n"+
-				tab+"\t\t\t\t\t\tFlags: "+ flags+"\n"+
-				tab+"\t\t\t\t\t\tNumber of Entries: "+ number_of_entries+"\n";
+		return "\t\t\t\t\tstts\n"+
+				"\t\t\t\t\t\tSize: "+size+"\n"+
+				"\t\t\t\t\t\tType: SampletoTableBox"+"\n"+
+				"\t\t\t\t\t\tVersion: "+ version+"\n"+
+				"\t\t\t\t\t\tFlags: "+ flags+"\n"+
+				"\t\t\t\t\t\tNumber of Entries: "+ number_of_entries+"\n";
 	}
 }

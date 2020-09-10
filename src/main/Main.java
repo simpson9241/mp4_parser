@@ -609,9 +609,98 @@ public class Main {
 				}
 				
 				if(stts.number_of_entries!=0) {
-					System.out.println("\t\t\t\t\tTime-to-sample Table\n");
+					System.out.println("\t\t\t\t\t\tTime-to-sample Table\n");
 					for(int i=0;i<stts.number_of_entries;i++) {
-						System.out.println("\t\t\t\t\tSample Count: "+stts.time_to_sample_table.get(i).sample_count+"\tSample Duration: "+stts.time_to_sample_table.get(i).sample_duration);
+						System.out.println("\t\t\t\t\t\tSample Count: "+stts.time_to_sample_table.get(i).sample_count+"\tSample Duration: "+stts.time_to_sample_table.get(i).sample_duration);
+					}
+				}
+
+				
+			}else if(type.equals("stss")){
+				
+				byte[] version=new byte[1];
+				fis.read(version);
+				long v=Util.ByteArrayToLong(version);
+				
+				byte[] flags=new byte[3];
+				fis.read(flags);
+				long f=Util.ByteArrayToLong(flags);
+				
+				boxes.SyncSampleBox stss=new boxes.SyncSampleBox("stss",v,f);
+				stss.size=size;
+				
+				byte[] number_of_entries=new byte[4];
+				fis.read(number_of_entries);
+				stss.entry_count=Util.ByteArrayToLong(number_of_entries);
+				
+				full_boxes.add(stss);
+				full_box_count++;
+								
+				System.out.println(stss);
+				
+				if(stss.entry_count!=0) {
+					for(int i=0;i<stss.entry_count;i++) {
+						
+						byte[] sample=new byte[4];
+						fis.read(sample);
+						stss.sync_sample_table.add(Util.ByteArrayToLong(sample));
+					}
+				}
+				
+				if(stss.entry_count!=0) {
+					System.out.println("\t\t\t\t\t\tSync Sample Table\n");
+					for(int i=0;i<stss.entry_count;i++) {
+						System.out.println("\t\t\t\t\t\tSample "+i+": "+stss.sync_sample_table.get(i).longValue());
+					}
+				}
+
+				
+			}else if(type.equals("stsc")){
+				
+				byte[] version=new byte[1];
+				fis.read(version);
+				long v=Util.ByteArrayToLong(version);
+				
+				byte[] flags=new byte[3];
+				fis.read(flags);
+				long f=Util.ByteArrayToLong(flags);
+				
+				boxes.SampletoChunkBox stsc=new boxes.SampletoChunkBox("stsc",v,f);
+				stsc.size=size;
+				
+				byte[] entry_count=new byte[4];
+				fis.read(entry_count);
+				stsc.entry_count=Util.ByteArrayToLong(entry_count);
+				
+				full_boxes.add(stsc);
+				full_box_count++;
+								
+				System.out.println(stsc);
+				
+				if(stsc.entry_count!=0) {
+					for(int i=0;i<stsc.entry_count;i++) {
+						boxes.SampletoChunkTable table=new boxes.SampletoChunkTable();
+
+						byte[] first_chunk=new byte[4];
+						fis.read(first_chunk);
+						table.first_chunk=Util.ByteArrayToLong(first_chunk);
+						
+						byte[] samples_per_chunk=new byte[4];
+						fis.read(samples_per_chunk);
+						table.samples_per_chunk=Util.ByteArrayToLong(samples_per_chunk);
+						
+						byte[] sample_description_id=new byte[4];
+						fis.read(sample_description_id);
+						table.sample_description_id=Util.ByteArrayToLong(sample_description_id);
+						
+						stsc.table.add(table);
+					}
+				}
+				
+				if(stsc.entry_count!=0) {
+					System.out.println("\t\t\t\t\t\tSample-to-Chunk Table\n");
+					for(int i=0;i<stsc.entry_count;i++) {
+						System.out.println("\t\t\t\t\t\tFirst Chunk: "+stsc.table.get(i).first_chunk+"\tSamples per Chunk: "+stsc.table.get(i).samples_per_chunk+"\tSample Description ID: "+stsc.table.get(i).sample_description_id);
 					}
 				}
 
