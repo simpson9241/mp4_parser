@@ -534,6 +534,30 @@ public class Main {
 				
 				depth--;
 				
+			}else if(type.equals("stbl")){
+				boxes.SampleTableBox stbl=new boxes.SampleTableBox("stbl");
+				stbl.size=size;
+				System.out.println(stbl);
+				
+				boxes.add(stbl);
+				box_count++;
+				
+				depth=4;
+			}else if(type.equals("stsd")){
+				boxes.SampleDescriptionBox stsd=new boxes.SampleDescriptionBox("stsd",0,0);
+				stsd.size=size;
+				
+				fis.skip(4);
+				
+				byte[] number_of_entries=new byte[4];
+				fis.read(number_of_entries);
+				stsd.number_of_entries=Util.ByteArrayToLong(number_of_entries);
+				
+				System.out.println(stsd);
+				
+				full_boxes.add(stsd);
+				full_box_count++;
+				
 			}else {
 				System.out.println(size);
 				System.out.println(type);
