@@ -10,15 +10,14 @@ public class HandlerReferenceBox extends FullBox{
 		super(boxtype, v, f);
 	}
 
-	@Override
-	public String toString() {
+	public String toString(String tab) {
 		
-		return "\t\t\thdlr\n"+
-		"\t\t\t\tSize: "+size+
-		"\n\t\t\t\tVersion: "+version+
-		"\n\t\t\t\tComponent Type: "+component_type+
-		"\n\t\t\t\tComponent Subtype: "+component_subtype+
-		"\n\t\t\t\tComponent Name: "+component_name+"\n";
+		return tab+"hdlr\n"+
+		tab+"\tSize: "+size+"\n"+
+		tab+"\tVersion: "+version+"\n"+
+		tab+"\tComponent Type: "+component_type+"\n"+
+		tab+"\tComponent Subtype: "+component_subtype+"\n"+
+		tab+"\tComponent Name: "+component_name+"\n";
 	}
 	
 	

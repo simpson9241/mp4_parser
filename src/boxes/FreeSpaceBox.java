@@ -7,10 +7,9 @@ public class FreeSpaceBox extends Box{
 		// TODO Auto-generated constructor stub
 	}
 	
-	@Override
-	public String toString() {
-		return "free\n"+
-				"\tSize: "+size+
-				"\n\tType: FreeSpaceBox\n";
+	public String toString(String tab) {
+		return tab+"free\n"+
+				tab+"\tSize: "+size+"\n"+
+				tab+"\tType: FreeSpaceBox\n";
 	}
 }

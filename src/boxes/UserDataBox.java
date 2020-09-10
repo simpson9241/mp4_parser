@@ -7,10 +7,9 @@ public class UserDataBox extends Box{
 		// TODO Auto-generated constructor stub
 	}
 
-	@Override
-	public String toString() {
-		return "\tudta\n"+
-				"\t\tSize: "+size+
-				"\n\t\tType: UserDataBox\n";
+	public String toString(String tab) {
+		return tab+"udta\n"+
+				tab+"\tSize: "+size+"\n"+
+				tab+"\tType: UserDataBox\n";
 	}
 }

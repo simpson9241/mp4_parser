@@ -1,16 +1,10 @@
 package main;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.TimeZone;
-
-import boxes.Box;
-import boxes.FullBox;
-
 public class Main {
 	//읽어들이는거 함수 따로 빼기
 	//박스 리스트나 다른걸로 해서 객체 계속 가지고 있기
@@ -23,10 +17,14 @@ public class Main {
 			System.out.println("파일 존재\n");
 		}
 		
+		int depth=0;
+		
 		ArrayList boxes=new ArrayList();
 		ArrayList full_boxes=new ArrayList();
 		int box_count=0;
 		int full_box_count=0;
+		
+		StringBuilder tab=new StringBuilder();
 		
 		
 		InputStream fis=new FileInputStream("BigBuckBunny.mp4");
@@ -70,6 +68,8 @@ public class Main {
 				
 				boxes.add(ftyp);
 				box_count++;
+				
+				depth=0;
 			}else if(type.equals("moov")){
 				boxes.MovieBox moov=new boxes.MovieBox("moov");
 				moov.size=size;
@@ -77,7 +77,9 @@ public class Main {
 				
 				boxes.add(moov);
 				box_count++;
-			}else if(type.equals("mvhd")){
+				
+				depth=0;
+			}else if(type.equals("mvhd")){				
 				long creation_time;
 				long modification_time;
 				
@@ -148,24 +150,43 @@ public class Main {
 				cal.add(Calendar.SECOND, (int)modification_time);
 				mvhd.modification_time=cal.getTime().toString();
 				
-				
 				System.out.println(mvhd);
 				
 				full_boxes.add(mvhd);
 				full_box_count++;
+				
+				depth=1;
 			}else if(type.equals("free")){
+				
+				
 				boxes.FreeSpaceBox free=new boxes.FreeSpaceBox("free");
 				free.size=size;
 				fis.skip(free.size-8);
-				System.out.println(free);
+							
+				for(int i=0;i<depth;i++) {
+					tab.append("\t");
+				}
+				
+				
+				System.out.println(free.toString(tab.toString()));
+				tab.delete(0, tab.length());
 				
 				boxes.add(free);
 				box_count++;
+				
 			}else if(type.equals("skip")){
 				boxes.FreeSpaceBox skip=new boxes.FreeSpaceBox("skip");
 				skip.size=size;
 				fis.skip(skip.size-8);
-				System.out.println(skip);
+				
+				for(int i=0;i<depth;i++) {
+					tab.append("\t");
+				}
+				
+				
+				System.out.println(skip.toString(tab.toString()));
+				tab.delete(0, tab.length());
+				
 				
 				boxes.add(skip);
 				box_count++;
@@ -176,6 +197,8 @@ public class Main {
 				
 				boxes.add(trak);
 				box_count++;
+				
+				depth=1;
 			}else if(type.equals("tkhd")){
 				long creation_time;
 				long modification_time;
@@ -267,6 +290,8 @@ public class Main {
 				
 				full_boxes.add(tkhd);
 				box_count++;
+				
+				depth=2;
 			}else if(type.equals("mdia")){
 				boxes.MediaBox mdia=new boxes.MediaBox("mdia");
 				mdia.size=size;
@@ -274,14 +299,23 @@ public class Main {
 				
 				boxes.add(mdia);
 				box_count++;
+				
+				depth=2;
 			}else if(type.equals("udta")){
+				depth++;
 				boxes.UserDataBox udta=new boxes.UserDataBox("udta");
 				udta.size=size;
-				System.out.println(udta);
+				for(int i=0;i<depth;i++) {
+					tab.append("\t");
+				}
 				
+				System.out.println(udta.toString(tab.toString()));
+
+				tab.delete(0, tab.length());
 				boxes.add(udta);
 				box_count++;
 			}else if(type.equals("mdhd")){
+				
 				long creation_time;
 				long modification_time;
 				
@@ -347,6 +381,9 @@ public class Main {
 				full_boxes.add(mdhd);
 				full_box_count++;
 			}else if(type.equals("hdlr")){
+				depth++;
+				
+				
 				byte[] version=new byte[1];
 				fis.read(version);
 				long v=Util.ByteArrayToLong(version);
@@ -370,10 +407,133 @@ public class Main {
 				fis.read(component_name_byte);
 				hdlr.component_name=new String(component_name_byte,StandardCharsets.US_ASCII);
 				
-				System.out.println(hdlr);
+				for(int i=0;i<depth;i++) {
+					tab.append("\t");
+				}
+				
+				
+				System.out.println(hdlr.toString(tab.toString()));
+				tab.delete(0, tab.length());
 				
 				full_boxes.add(hdlr);
 				full_box_count++;
+				
+				depth--;
+			}else if(type.equals("minf")){
+				boxes.MediaInformationBox minf=new boxes.MediaInformationBox("minf");
+				minf.size=size;
+				System.out.println(minf);
+				
+				boxes.add(minf);
+				box_count++;
+				
+				depth=3;
+			}else if(type.equals("vmhd")){
+
+				byte[] version=new byte[1];
+				fis.read(version);
+				long v=Util.ByteArrayToLong(version);
+				
+				byte[] flags=new byte[3];
+				fis.read(flags);
+				long f=Util.ByteArrayToLong(flags);
+				
+				boxes.VideoMediaHeaderBox vmhd=new boxes.VideoMediaHeaderBox("vmhd", v, f);
+				
+				vmhd.size=size;
+				
+				byte[] graphics_mode=new byte[2];
+				fis.read(graphics_mode);
+				vmhd.graphics_mode=(int)Util.ByteArrayToLong(graphics_mode);
+				
+				byte[] opcolor_r=new byte[2];
+				fis.read(opcolor_r);
+				vmhd.opcolor_r=(int)Util.ByteArrayToLong(opcolor_r);
+				
+				byte[] opcolor_g=new byte[2];
+				fis.read(opcolor_g);
+				vmhd.opcolor_g=(int)Util.ByteArrayToLong(opcolor_g);
+				
+				byte[] opcolor_b=new byte[2];
+				fis.read(opcolor_b);
+				vmhd.opcolor_b=(int)Util.ByteArrayToLong(opcolor_b);
+				
+				System.out.println(vmhd);
+				
+				full_boxes.add(vmhd);
+				full_box_count++;
+			}else if(type.equals("dinf")){
+				depth++;
+				boxes.DataInformationBox dinf=new boxes.DataInformationBox("dinf");
+				dinf.size=size;
+				
+				boxes.add(dinf);
+				box_count++;
+				
+				for(int i=0;i<depth;i++) {
+					tab.append("\t");
+				}
+				
+				
+				System.out.println(dinf.toString(tab.toString()));
+				tab.delete(0, tab.length());
+				
+				
+			}else if(type.equals("dref")){
+				depth++;
+				byte[] version=new byte[1];
+				fis.read(version);
+				long v=Util.ByteArrayToLong(version);
+				
+				byte[] flags=new byte[3];
+				fis.read(flags);
+				long f=Util.ByteArrayToLong(flags);
+				
+				boxes.DataReferenceBox dref=new boxes.DataReferenceBox("dref",v,f);
+				dref.size=size;
+				
+				byte[] number_of_entries=new byte[4];
+				fis.read(number_of_entries);
+				dref.number_of_entries=Util.ByteArrayToLong(number_of_entries);
+				
+				full_boxes.add(dref);
+				full_box_count++;
+				
+				for(int i=0;i<depth;i++) {
+					tab.append("\t");
+				}
+				
+				System.out.println(dref.toString(tab.toString()));
+				tab.delete(0, tab.length());
+				
+				if(dref.number_of_entries!=0) {
+					for(int i=0;i<dref.number_of_entries;i++) {
+						boxes.DataReference datareference=new boxes.DataReference();
+						byte[] reference_size=new byte[4];
+						fis.read(reference_size);
+						datareference.size=Util.ByteArrayToLong(reference_size);
+						
+						byte[] reference_type=new byte[4];
+						fis.read(reference_type);
+						datareference.type=new String(reference_type,StandardCharsets.US_ASCII);
+						
+						byte[] reference_version=new byte[1];
+						fis.read(reference_version);
+						datareference.version=Util.ByteArrayToLong(reference_version);
+						
+						byte[] reference_flags=new byte[3];
+						fis.read(reference_flags);
+						datareference.flags=Util.ByteArrayToLong(reference_flags);
+						
+						byte[] reference_data=new byte[(int)datareference.size-12];
+						fis.read(reference_data);
+						datareference.data=new String(reference_data,StandardCharsets.US_ASCII);
+						dref.data_references.add(datareference);
+					}
+				}
+				
+				depth--;
+				
 			}else {
 				System.out.println(size);
 				System.out.println(type);
