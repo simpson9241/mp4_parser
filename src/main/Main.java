@@ -3,6 +3,7 @@ package main;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.TimeZone;
 public class Main {
@@ -11,6 +12,7 @@ public class Main {
 	//계층 구조 상황에 따라서 다름 -> 어느 박스에 있는지 확인할 플래그 변수 생성?
 	//변수의 값에 따라 for i는 변수의 값까지 반복해서 \t로 이루어진 스트링 생성
 	//\t의 자리에 스트링 넣어서 출력
+	//sample table 300개 넘어가면 그 이상으로 출력 x 안하게 조정
 	public static void main(String[] args) throws Exception{
 		File file=new File("BigBuckBunny.mp4");
 //		if(file.isFile()) {
@@ -42,7 +44,6 @@ public class Main {
 			size=Util.ByteArrayToLong(size_byte);
 			type=new String(type_byte,StandardCharsets.US_ASCII);
 			
-//			System.out.println(Arrays.toString(buffer));
 			if(type.equals("ftyp")) {
 				boxes.FileTypeBox ftyp=new boxes.FileTypeBox("ftyp");
 				ftyp.size=size;
@@ -703,7 +704,48 @@ public class Main {
 						System.out.println("\t\t\t\t\t\tFirst Chunk: "+stsc.table.get(i).first_chunk+"\tSamples per Chunk: "+stsc.table.get(i).samples_per_chunk+"\tSample Description ID: "+stsc.table.get(i).sample_description_id);
 					}
 				}
-
+				
+			}else if(type.equals("stsz")){
+				
+				byte[] version=new byte[1];
+				fis.read(version);
+				long v=Util.ByteArrayToLong(version);
+				
+				byte[] flags=new byte[3];
+				fis.read(flags);
+				long f=Util.ByteArrayToLong(flags);
+				
+				boxes.SampleSizeBox stsz=new boxes.SampleSizeBox("stsz",v,f);
+				stsz.size=size;
+				
+				byte[] sample_size=new byte[4];
+				fis.read(sample_size);
+				stsz.sample_size=Util.ByteArrayToLong(sample_size);
+				
+				byte[] entry_count=new byte[4];
+				fis.read(entry_count);
+				stsz.entry_count=Util.ByteArrayToLong(entry_count);
+				
+				full_boxes.add(stsz);
+				full_box_count++;
+								
+				System.out.println(stsz);
+				
+				if(stsz.entry_count!=0) {
+					for(int i=0;i<stsz.entry_count;i++) {
+						
+						byte[] sample=new byte[4];
+						fis.read(sample);
+						stsz.sample_size_table.add(Util.ByteArrayToLong(sample));
+					}
+				}
+				
+				if(stsz.entry_count!=0) {
+					System.out.println("\t\t\t\t\t\tSample Size Table\n");
+					for(int i=0;i<stsz.entry_count;i++) {
+						System.out.println("\t\t\t\t\t\tSample "+i+": "+stsz.sample_size_table.get(i).longValue());
+					}
+				}
 				
 			}else {
 				System.out.println(size);
@@ -713,7 +755,7 @@ public class Main {
 		}
 		fis.close();
 		System.out.println("\nfinished");
-
+		
 	}
 
 }
