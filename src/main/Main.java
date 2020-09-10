@@ -13,9 +13,9 @@ public class Main {
 	//\t의 자리에 스트링 넣어서 출력
 	public static void main(String[] args) throws Exception{
 		File file=new File("BigBuckBunny.mp4");
-		if(file.isFile()) {
-			System.out.println("파일 존재\n");
-		}
+//		if(file.isFile()) {
+//			System.out.println("파일 존재\n");
+//		}
 		
 		int depth=0;
 		
@@ -504,7 +504,6 @@ public class Main {
 				}
 				
 				System.out.println(dref.toString(tab.toString()));
-				tab.delete(0, tab.length());
 				
 				if(dref.number_of_entries!=0) {
 					for(int i=0;i<dref.number_of_entries;i++) {
@@ -532,6 +531,19 @@ public class Main {
 					}
 				}
 				
+				if(dref.number_of_entries!=0) {
+					System.out.println(tab+"Data References");
+					for(int i=0;i<dref.number_of_entries;i++) {
+						System.out.println(tab+"\tSize: "+dref.data_references.get(i).size+"\n"+
+											tab+"\tType: "+dref.data_references.get(i).type+"\n"+
+											tab+"\tVersion: "+dref.data_references.get(i).version+"\n"+
+											tab+"\tFlags: "+dref.data_references.get(i).flags+"\n"+
+											tab+"\tData: "+dref.data_references.get(i).data+"\n");
+					}
+				}
+				
+
+				tab.delete(0, tab.length());
 				depth--;
 				
 			}else if(type.equals("stbl")){
@@ -557,6 +569,52 @@ public class Main {
 				
 				full_boxes.add(stsd);
 				full_box_count++;
+				
+			}else if(type.equals("stts")){
+				
+				byte[] version=new byte[1];
+				fis.read(version);
+				long v=Util.ByteArrayToLong(version);
+				
+				byte[] flags=new byte[3];
+				fis.read(flags);
+				long f=Util.ByteArrayToLong(flags);
+				
+				boxes.SampletoTableBox stts=new boxes.SampletoTableBox("stts",v,f);
+				stts.size=size;
+				
+				byte[] number_of_entries=new byte[4];
+				fis.read(number_of_entries);
+				stts.number_of_entries=Util.ByteArrayToLong(number_of_entries);
+				
+				full_boxes.add(stts);
+				full_box_count++;
+								
+				System.out.println(stts);
+				
+				if(stts.number_of_entries!=0) {
+					for(int i=0;i<stts.number_of_entries;i++) {
+						boxes.TimetoSampleTable table=new boxes.TimetoSampleTable();
+
+						byte[] sample_count=new byte[4];
+						fis.read(sample_count);
+						table.sample_count=Util.ByteArrayToLong(sample_count);
+						
+						byte[] sample_duration=new byte[4];
+						fis.read(sample_duration);
+						table.sample_duration=Util.ByteArrayToLong(sample_duration);
+						
+						stts.time_to_sample_table.add(table);
+					}
+				}
+				
+				if(stts.number_of_entries!=0) {
+					System.out.println("\t\t\t\t\tTime-to-sample Table\n");
+					for(int i=0;i<stts.number_of_entries;i++) {
+						System.out.println("\t\t\t\t\tSample Count: "+stts.time_to_sample_table.get(i).sample_count+"\tSample Duration: "+stts.time_to_sample_table.get(i).sample_duration);
+					}
+				}
+
 				
 			}else {
 				System.out.println(size);
