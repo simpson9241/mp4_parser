@@ -3,7 +3,7 @@ package boxes;
 import java.util.ArrayList;
 
 public class DataReferenceBox extends FullBox{
-	public long number_of_entries;
+	public long entry_count;
 	public ArrayList<DataReference> data_references=new ArrayList<DataReference>();
 	public DataReferenceBox(String boxtype, long v, long f) { //dref
 		super(boxtype, v, f);
@@ -17,7 +17,7 @@ public class DataReferenceBox extends FullBox{
 				tab+"\tType: DataReferenceBox"+"\n"+
 				tab+"\tVersion: "+ version+"\n"+
 				tab+"\tFlags: "+ flags+"\n"+
-				tab+"\tNumber of Entries: "+ number_of_entries+"\n";
+				tab+"\tNumber of Entries: "+ entry_count+"\n";
 	}
 
 }

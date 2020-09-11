@@ -1,7 +1,7 @@
 package boxes;
 
 public class SampleDescriptionBox extends FullBox{
-	public long number_of_entries;
+	public long entry_count;
 	public SampleDescriptionBox(String boxtype, long v, long f) { //stsd
 		super(boxtype, v, f);
 	}

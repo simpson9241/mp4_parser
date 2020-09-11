@@ -12,7 +12,8 @@ public class Main {
 	//계층 구조 상황에 따라서 다름 -> 어느 박스에 있는지 확인할 플래그 변수 생성?
 	//변수의 값에 따라 for i는 변수의 값까지 반복해서 \t로 이루어진 스트링 생성
 	//\t의 자리에 스트링 넣어서 출력
-	//sample table 300개 넘어가면 그 이상으로 출력 x 안하게 조정
+	//sample table 100개 넘어가면 그 이상으로 출력 x 안하게 조정
+	//stsd box 하위 구조 구현해야됨
 	public static void main(String[] args) throws Exception{
 		File file=new File("BigBuckBunny.mp4");
 //		if(file.isFile()) {
@@ -493,9 +494,9 @@ public class Main {
 				boxes.DataReferenceBox dref=new boxes.DataReferenceBox("dref",v,f);
 				dref.size=size;
 				
-				byte[] number_of_entries=new byte[4];
-				fis.read(number_of_entries);
-				dref.number_of_entries=Util.ByteArrayToLong(number_of_entries);
+				byte[] entry_count=new byte[4];
+				fis.read(entry_count);
+				dref.entry_count=Util.ByteArrayToLong(entry_count);
 				
 				full_boxes.add(dref);
 				full_box_count++;
@@ -506,8 +507,8 @@ public class Main {
 				
 				System.out.println(dref.toString(tab.toString()));
 				
-				if(dref.number_of_entries!=0) {
-					for(int i=0;i<dref.number_of_entries;i++) {
+				if(dref.entry_count!=0) {
+					for(int i=0;i<dref.entry_count;i++) {
 						boxes.DataReference datareference=new boxes.DataReference();
 						byte[] reference_size=new byte[4];
 						fis.read(reference_size);
@@ -532,14 +533,25 @@ public class Main {
 					}
 				}
 				
-				if(dref.number_of_entries!=0) {
-					System.out.println(tab+"Data References");
-					for(int i=0;i<dref.number_of_entries;i++) {
-						System.out.println(tab+"\tSize: "+dref.data_references.get(i).size+"\n"+
-											tab+"\tType: "+dref.data_references.get(i).type+"\n"+
-											tab+"\tVersion: "+dref.data_references.get(i).version+"\n"+
-											tab+"\tFlags: "+dref.data_references.get(i).flags+"\n"+
-											tab+"\tData: "+dref.data_references.get(i).data+"\n");
+				if(dref.entry_count!=0) {
+					if(dref.entry_count>100) {
+						System.out.println(tab+"Data References");
+						for(int i=0;i<100;i++) {
+							System.out.println(tab+"\tSize: "+dref.data_references.get(i).size+"\n"+
+												tab+"\tType: "+dref.data_references.get(i).type+"\n"+
+												tab+"\tVersion: "+dref.data_references.get(i).version+"\n"+
+												tab+"\tFlags: "+dref.data_references.get(i).flags+"\n"+
+												tab+"\tData: "+dref.data_references.get(i).data+"\n");
+						}
+					}else {
+						System.out.println(tab+"Data References");
+						for(int i=0;i<dref.entry_count;i++) {
+							System.out.println(tab+"\tSize: "+dref.data_references.get(i).size+"\n"+
+												tab+"\tType: "+dref.data_references.get(i).type+"\n"+
+												tab+"\tVersion: "+dref.data_references.get(i).version+"\n"+
+												tab+"\tFlags: "+dref.data_references.get(i).flags+"\n"+
+												tab+"\tData: "+dref.data_references.get(i).data+"\n");
+						}
 					}
 				}
 				
@@ -562,9 +574,9 @@ public class Main {
 				
 				fis.skip(4);
 				
-				byte[] number_of_entries=new byte[4];
-				fis.read(number_of_entries);
-				stsd.number_of_entries=Util.ByteArrayToLong(number_of_entries);
+				byte[] entry_count=new byte[4];
+				fis.read(entry_count);
+				stsd.entry_count=Util.ByteArrayToLong(entry_count);
 				
 				System.out.println(stsd);
 				
@@ -584,17 +596,17 @@ public class Main {
 				boxes.SampletoTableBox stts=new boxes.SampletoTableBox("stts",v,f);
 				stts.size=size;
 				
-				byte[] number_of_entries=new byte[4];
-				fis.read(number_of_entries);
-				stts.number_of_entries=Util.ByteArrayToLong(number_of_entries);
+				byte[] entry_count=new byte[4];
+				fis.read(entry_count);
+				stts.entry_count=Util.ByteArrayToLong(entry_count);
 				
 				full_boxes.add(stts);
 				full_box_count++;
 								
 				System.out.println(stts);
 				
-				if(stts.number_of_entries!=0) {
-					for(int i=0;i<stts.number_of_entries;i++) {
+				if(stts.entry_count!=0) {
+					for(int i=0;i<stts.entry_count;i++) {
 						boxes.TimetoSampleTable table=new boxes.TimetoSampleTable();
 
 						byte[] sample_count=new byte[4];
@@ -609,10 +621,17 @@ public class Main {
 					}
 				}
 				
-				if(stts.number_of_entries!=0) {
-					System.out.println("\t\t\t\t\t\tTime-to-sample Table\n");
-					for(int i=0;i<stts.number_of_entries;i++) {
-						System.out.println("\t\t\t\t\t\tSample Count: "+stts.time_to_sample_table.get(i).sample_count+"\tSample Duration: "+stts.time_to_sample_table.get(i).sample_duration);
+				if(stts.entry_count!=0) {
+					if(stts.entry_count>100) {
+						System.out.println("\t\t\t\t\t\tTime-to-sample Table\n");
+						for(int i=0;i<100;i++) {
+							System.out.println("\t\t\t\t\t\tSample Count: "+stts.time_to_sample_table.get(i).sample_count+"\tSample Duration: "+stts.time_to_sample_table.get(i).sample_duration);
+						}
+					}else {
+						System.out.println("\t\t\t\t\t\tTime-to-sample Table\n");
+						for(int i=0;i<stts.entry_count;i++) {
+							System.out.println("\t\t\t\t\t\tSample Count: "+stts.time_to_sample_table.get(i).sample_count+"\tSample Duration: "+stts.time_to_sample_table.get(i).sample_duration);
+						}
 					}
 				}
 
@@ -630,9 +649,9 @@ public class Main {
 				boxes.SyncSampleBox stss=new boxes.SyncSampleBox("stss",v,f);
 				stss.size=size;
 				
-				byte[] number_of_entries=new byte[4];
-				fis.read(number_of_entries);
-				stss.entry_count=Util.ByteArrayToLong(number_of_entries);
+				byte[] entry_count=new byte[4];
+				fis.read(entry_count);
+				stss.entry_count=Util.ByteArrayToLong(entry_count);
 				
 				full_boxes.add(stss);
 				full_box_count++;
@@ -649,10 +668,18 @@ public class Main {
 				}
 				
 				if(stss.entry_count!=0) {
-					System.out.println("\t\t\t\t\t\tSync Sample Table\n");
-					for(int i=0;i<stss.entry_count;i++) {
-						System.out.println("\t\t\t\t\t\tSample "+i+": "+stss.sync_sample_table.get(i).longValue());
+					if(stss.entry_count>100) {
+						System.out.println("\t\t\t\t\t\tSync Sample Table\n");
+						for(int i=0;i<100;i++) {
+							System.out.println("\t\t\t\t\t\tSample "+i+": "+stss.sync_sample_table.get(i).longValue());
+						}	
+					}else {
+						System.out.println("\t\t\t\t\t\tSync Sample Table\n");
+						for(int i=0;i<stss.entry_count;i++) {
+							System.out.println("\t\t\t\t\t\tSample "+i+": "+stss.sync_sample_table.get(i).longValue());
+						}
 					}
+					
 				}
 
 				
@@ -699,10 +726,18 @@ public class Main {
 				}
 				
 				if(stsc.entry_count!=0) {
-					System.out.println("\t\t\t\t\t\tSample-to-Chunk Table\n");
-					for(int i=0;i<stsc.entry_count;i++) {
-						System.out.println("\t\t\t\t\t\tFirst Chunk: "+stsc.table.get(i).first_chunk+"\tSamples per Chunk: "+stsc.table.get(i).samples_per_chunk+"\tSample Description ID: "+stsc.table.get(i).sample_description_id);
+					if(stsc.entry_count>100) {
+						System.out.println("\t\t\t\t\t\tSample-to-Chunk Table\n");
+						for(int i=0;i<100;i++) {
+							System.out.println("\t\t\t\t\t\tFirst Chunk: "+stsc.table.get(i).first_chunk+"\tSamples per Chunk: "+stsc.table.get(i).samples_per_chunk+"\tSample Description ID: "+stsc.table.get(i).sample_description_id);
+						}
+					}else {
+						System.out.println("\t\t\t\t\t\tSample-to-Chunk Table\n");
+						for(int i=0;i<stsc.entry_count;i++) {
+							System.out.println("\t\t\t\t\t\tFirst Chunk: "+stsc.table.get(i).first_chunk+"\tSamples per Chunk: "+stsc.table.get(i).samples_per_chunk+"\tSample Description ID: "+stsc.table.get(i).sample_description_id);
+						}
 					}
+					
 				}
 				
 			}else if(type.equals("stsz")){
@@ -741,12 +776,46 @@ public class Main {
 				}
 				
 				if(stsz.entry_count!=0) {
-					System.out.println("\t\t\t\t\t\tSample Size Table\n");
-					for(int i=0;i<stsz.entry_count;i++) {
-						System.out.println("\t\t\t\t\t\tSample "+i+": "+stsz.sample_size_table.get(i).longValue());
+					if(stsz.entry_count>100) {
+						System.out.println("\t\t\t\t\t\tSample Size Table\n");
+						for(int i=0;i<100;i++) {
+							System.out.println("\t\t\t\t\t\tSample "+i+": "+stsz.sample_size_table.get(i).longValue());
+						}
+					}else {
+						System.out.println("\t\t\t\t\t\tSample Size Table\n");
+						for(int i=0;i<stsz.entry_count;i++) {
+							System.out.println("\t\t\t\t\t\tSample "+i+": "+stsz.sample_size_table.get(i).longValue());
+						}
 					}
+					
 				}
 				
+			}else if(type.equals("smhd")){
+
+				byte[] version=new byte[1];
+				fis.read(version);
+				long v=Util.ByteArrayToLong(version);
+				
+				byte[] flags=new byte[3];
+				fis.read(flags);
+				long f=Util.ByteArrayToLong(flags);
+				
+				boxes.SoundMediaHeaderBox smhd=new boxes.SoundMediaHeaderBox("smhd", v, f);
+				
+				smhd.size=size;
+				
+				byte[] balance=new byte[2];
+				fis.read(balance);
+				smhd.balance=(int)Util.ByteArrayToLong(balance);
+				
+				byte[] reserved=new byte[2];
+				fis.read(reserved);
+				smhd.reserved=(int)Util.ByteArrayToLong(reserved);
+				
+				System.out.println(smhd);
+				
+				full_boxes.add(smhd);
+				full_box_count++;
 			}else {
 				System.out.println(size);
 				System.out.println(type);
