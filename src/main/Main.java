@@ -834,6 +834,21 @@ public class Main {
 						}
 					}
 				}
+			}else if(type.equals("mdat")){
+				boxes.MediaDataBox mdat=new boxes.MediaDataBox("mdat");
+				if(size==1) {
+					byte[] largesize=new byte[8];
+					fis.read(largesize);
+					mdat.largesize=Util.ByteArrayToLong(largesize);
+				}
+				
+				
+				
+				
+				boxes.add(mdat);
+				box_count++;
+				
+				depth=0;
 			}else {
 				System.out.println(size);
 				System.out.println(type);
