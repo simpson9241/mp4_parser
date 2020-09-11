@@ -16,7 +16,7 @@ public class SampleSizeBox extends FullBox {
 	@Override
 	public String toString() {
 		// TODO Auto-generated method stub
-		return "\t\t\t\t\tstsc\n"+
+		return "\t\t\t\t\tstsz\n"+
 				"\t\t\t\t\t\tSize: "+size+"\n"+
 				"\t\t\t\t\t\tType: SampleSizeBox"+"\n"+
 				"\t\t\t\t\t\tVersion: "+ version+"\n"+
