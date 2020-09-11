@@ -7,12 +7,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.TimeZone;
 public class Main {
-	//읽어들이는거 함수 따로 빼기
-	//박스 리스트나 다른걸로 해서 객체 계속 가지고 있기
-	//계층 구조 상황에 따라서 다름 -> 어느 박스에 있는지 확인할 플래그 변수 생성?
-	//변수의 값에 따라 for i는 변수의 값까지 반복해서 \t로 이루어진 스트링 생성
-	//\t의 자리에 스트링 넣어서 출력
-	//sample table 100개 넘어가면 그 이상으로 출력 x 안하게 조정
 	//stsd box 하위 구조 구현해야됨
 	public static void main(String[] args) throws Exception{
 		File file=new File("BigBuckBunny.mp4");
@@ -20,7 +14,8 @@ public class Main {
 //			System.out.println("파일 존재\n");
 //		}
 		
-		int depth=0;
+		
+		int depth=0; //계층 구조 확인용
 		
 		ArrayList boxes=new ArrayList();
 		ArrayList full_boxes=new ArrayList();
@@ -28,7 +23,6 @@ public class Main {
 		int full_box_count=0;
 		
 		StringBuilder tab=new StringBuilder();
-		
 		
 		InputStream fis=new FileInputStream("BigBuckBunny.mp4");
 		
@@ -41,6 +35,7 @@ public class Main {
 		cal.setTimeZone(TimeZone.getTimeZone("GMT"));
 		
 		while(fis.read(size_byte)!=-1) {
+			
 			fis.read(type_byte);
 			size=Util.ByteArrayToLong(size_byte);
 			type=new String(type_byte,StandardCharsets.US_ASCII);
@@ -123,7 +118,6 @@ public class Main {
 					mvhd.duration=Util.ByteArrayToLong(duration);
 				}
 				
-				
 				byte[] rate_1=new byte[2];
 				fis.read(rate_1);
 				byte[] rate_2=new byte[2];
@@ -160,7 +154,6 @@ public class Main {
 				depth=1;
 			}else if(type.equals("free")){
 				
-				
 				boxes.FreeSpaceBox free=new boxes.FreeSpaceBox("free");
 				free.size=size;
 				fis.skip(free.size-8);
@@ -168,7 +161,6 @@ public class Main {
 				for(int i=0;i<depth;i++) {
 					tab.append("\t");
 				}
-				
 				
 				System.out.println(free.toString(tab.toString()));
 				tab.delete(0, tab.length());
@@ -185,10 +177,8 @@ public class Main {
 					tab.append("\t");
 				}
 				
-				
 				System.out.println(skip.toString(tab.toString()));
 				tab.delete(0, tab.length());
-				
 				
 				boxes.add(skip);
 				box_count++;
@@ -212,7 +202,6 @@ public class Main {
 				byte[] flags=new byte[3];
 				fis.read(flags);
 				long f=Util.ByteArrayToLong(flags);
-				
 				
 				boxes.TrackHeaderBox tkhd=new boxes.TrackHeaderBox("tkhd", v, f);
 				
@@ -286,7 +275,6 @@ public class Main {
 				cal.add(Calendar.SECOND, -2082844800);
 				cal.add(Calendar.SECOND, (int)modification_time);
 				tkhd.modification_time=cal.getTime().toString();
-				
 				
 				System.out.println(tkhd);
 				
@@ -366,7 +354,6 @@ public class Main {
 				fis.read(quality);
 				mdhd.quality=Util.ByteArrayToLong(quality);
 				
-				
 				cal.set(1970, 0, 1, 0, 0, 0);
 				cal.add(Calendar.SECOND, -2082844800);
 				cal.add(Calendar.SECOND, (int)creation_time);
@@ -377,14 +364,12 @@ public class Main {
 				cal.add(Calendar.SECOND, (int)modification_time);
 				mdhd.modification_time=cal.getTime().toString();
 				
-				
 				System.out.println(mdhd);
 				
 				full_boxes.add(mdhd);
 				full_box_count++;
 			}else if(type.equals("hdlr")){
 				depth++;
-				
 				
 				byte[] version=new byte[1];
 				fis.read(version);
@@ -412,7 +397,6 @@ public class Main {
 				for(int i=0;i<depth;i++) {
 					tab.append("\t");
 				}
-				
 				
 				System.out.println(hdlr.toString(tab.toString()));
 				tab.delete(0, tab.length());
@@ -476,10 +460,8 @@ public class Main {
 					tab.append("\t");
 				}
 				
-				
 				System.out.println(dinf.toString(tab.toString()));
 				tab.delete(0, tab.length());
-				
 				
 			}else if(type.equals("dref")){
 				depth++;
@@ -534,9 +516,9 @@ public class Main {
 				}
 				
 				if(dref.entry_count!=0) {
-					if(dref.entry_count>100) {
+					if(dref.entry_count>50) {
 						System.out.println(tab+"Data References");
-						for(int i=0;i<100;i++) {
+						for(int i=0;i<50;i++) {
 							System.out.println(tab+"\tSize: "+dref.data_references.get(i).size+"\n"+
 												tab+"\tType: "+dref.data_references.get(i).type+"\n"+
 												tab+"\tVersion: "+dref.data_references.get(i).version+"\n"+
@@ -555,7 +537,6 @@ public class Main {
 					}
 				}
 				
-
 				tab.delete(0, tab.length());
 				depth--;
 				
@@ -622,9 +603,9 @@ public class Main {
 				}
 				
 				if(stts.entry_count!=0) {
-					if(stts.entry_count>100) {
+					if(stts.entry_count>50) {
 						System.out.println("\t\t\t\t\t\tTime-to-sample Table\n");
-						for(int i=0;i<100;i++) {
+						for(int i=0;i<50;i++) {
 							System.out.println("\t\t\t\t\t\tSample Count: "+stts.time_to_sample_table.get(i).sample_count+"\tSample Duration: "+stts.time_to_sample_table.get(i).sample_duration);
 						}
 					}else {
@@ -634,8 +615,6 @@ public class Main {
 						}
 					}
 				}
-
-				
 			}else if(type.equals("stss")){
 				
 				byte[] version=new byte[1];
@@ -668,9 +647,9 @@ public class Main {
 				}
 				
 				if(stss.entry_count!=0) {
-					if(stss.entry_count>100) {
+					if(stss.entry_count>50) {
 						System.out.println("\t\t\t\t\t\tSync Sample Table\n");
-						for(int i=0;i<100;i++) {
+						for(int i=0;i<50;i++) {
 							System.out.println("\t\t\t\t\t\tSample "+i+": "+stss.sync_sample_table.get(i).longValue());
 						}	
 					}else {
@@ -679,10 +658,7 @@ public class Main {
 							System.out.println("\t\t\t\t\t\tSample "+i+": "+stss.sync_sample_table.get(i).longValue());
 						}
 					}
-					
 				}
-
-				
 			}else if(type.equals("stsc")){
 				
 				byte[] version=new byte[1];
@@ -726,9 +702,9 @@ public class Main {
 				}
 				
 				if(stsc.entry_count!=0) {
-					if(stsc.entry_count>100) {
+					if(stsc.entry_count>50) {
 						System.out.println("\t\t\t\t\t\tSample-to-Chunk Table\n");
-						for(int i=0;i<100;i++) {
+						for(int i=0;i<50;i++) {
 							System.out.println("\t\t\t\t\t\tFirst Chunk: "+stsc.table.get(i).first_chunk+"\tSamples per Chunk: "+stsc.table.get(i).samples_per_chunk+"\tSample Description ID: "+stsc.table.get(i).sample_description_id);
 						}
 					}else {
@@ -737,9 +713,7 @@ public class Main {
 							System.out.println("\t\t\t\t\t\tFirst Chunk: "+stsc.table.get(i).first_chunk+"\tSamples per Chunk: "+stsc.table.get(i).samples_per_chunk+"\tSample Description ID: "+stsc.table.get(i).sample_description_id);
 						}
 					}
-					
 				}
-				
 			}else if(type.equals("stsz")){
 				
 				byte[] version=new byte[1];
@@ -776,9 +750,9 @@ public class Main {
 				}
 				
 				if(stsz.entry_count!=0) {
-					if(stsz.entry_count>100) {
+					if(stsz.entry_count>50) {
 						System.out.println("\t\t\t\t\t\tSample Size Table\n");
-						for(int i=0;i<100;i++) {
+						for(int i=0;i<50;i++) {
 							System.out.println("\t\t\t\t\t\tSample "+i+": "+stsz.sample_size_table.get(i).longValue());
 						}
 					}else {
@@ -816,6 +790,50 @@ public class Main {
 				
 				full_boxes.add(smhd);
 				full_box_count++;
+			}else if(type.equals("stco")){
+				
+				byte[] version=new byte[1];
+				fis.read(version);
+				long v=Util.ByteArrayToLong(version);
+				
+				byte[] flags=new byte[3];
+				fis.read(flags);
+				long f=Util.ByteArrayToLong(flags);
+				
+				boxes.ChunkOffsetBox stco=new boxes.ChunkOffsetBox("stco",v,f);
+				stco.size=size;
+				
+				byte[] entry_count=new byte[4];
+				fis.read(entry_count);
+				stco.entry_count=Util.ByteArrayToLong(entry_count);
+				
+				full_boxes.add(stco);
+				full_box_count++;
+								
+				System.out.println(stco);
+				
+				if(stco.entry_count!=0) {
+					for(int i=0;i<stco.entry_count;i++) {
+						
+						byte[] offset=new byte[4];
+						fis.read(offset);
+						stco.chunk_offset_table.add(Util.ByteArrayToLong(offset));
+					}
+				}
+				
+				if(stco.entry_count!=0) {
+					if(stco.entry_count>50) {
+						System.out.println("\t\t\t\t\t\tChunk Offset Table\n");
+						for(int i=0;i<50;i++) {
+							System.out.println("\t\t\t\t\t\tSample "+i+": "+stco.chunk_offset_table.get(i).longValue());
+						}
+					}else {
+						System.out.println("\t\t\t\t\t\tChunk Offset Table\n");
+						for(int i=0;i<stco.entry_count;i++) {
+							System.out.println("\t\t\t\t\t\tSample "+i+": "+stco.chunk_offset_table.get(i).longValue());
+						}
+					}
+				}
 			}else {
 				System.out.println(size);
 				System.out.println(type);
@@ -824,7 +842,5 @@ public class Main {
 		}
 		fis.close();
 		System.out.println("\nfinished");
-		
 	}
-
 }
