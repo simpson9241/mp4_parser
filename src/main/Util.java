@@ -12,4 +12,12 @@ public class Util {
 		return value;
 	}
 	
+	public static String ByteArrayToHex(byte[] bytes) {
+		StringBuilder sb=new StringBuilder();
+		for(final byte b: bytes) {
+			sb.append(String.format("%02x ", b&0xff));
+		}
+		return sb.toString();
+	}
+	
 }

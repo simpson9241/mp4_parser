@@ -18,7 +18,7 @@ public class Main {
 		
 		
 		int depth=0; //계층 구조 확인용
-		
+		int which_first_flag=0; //moov 1 mdat 2
 		ArrayList<boxes.Box> boxes=new ArrayList<boxes.Box>();
 		ArrayList<boxes.FullBox> full_boxes=new ArrayList<boxes.FullBox>();
 		int box_count=0;
@@ -840,6 +840,7 @@ public class Main {
 			}else if(type.equals("mdat")){
 				boxes.MediaDataBox mdat=new boxes.MediaDataBox("mdat");
 				mdat.size=size;
+				fis.skip(size);
 				if(size==1) {
 					byte[] largesize=new byte[8];
 					fis.read(largesize);
@@ -853,6 +854,8 @@ public class Main {
 				int stts_count=0;
 				int sample_duration=0;
 				long sample_offset=0;
+				int video_sample_count=0;
+				int audio_sample_count=0;
 				
 				if(size==1) {
 					System.out.println("mdat\n"+
@@ -896,16 +899,19 @@ public class Main {
 						for(int j=i;j<full_box_count;j++) {
 							if(full_boxes.get(j).type.equals("stsz")) {
 								stsz=(boxes.SampleSizeBox) full_boxes.get(j);
+								break;
 							}
 						}
 						
 						for(int j=i;j<full_box_count;j++) {
 							if(full_boxes.get(j).type.equals("stts")) {
 								stts=(boxes.SampletoTableBox) full_boxes.get(j);
+								break;
 							}
 						}
 						
 						sample_count=(int) stsc.table.get(0).samples_per_chunk;
+						sample_duration=(int) stts.time_to_sample_table.get(0).sample_duration;
 						for(chunk_index=0;chunk_index<stco.entry_count;chunk_index++) {
 							if((stsc_index+1)<stsc.entry_count) {
 								if(stsc.table.get(stsc_index+1).first_chunk==(chunk_index+1)) {
@@ -916,13 +922,12 @@ public class Main {
 							InputStream sample_stream=new FileInputStream("BigBuckBunny.mp4");
 							sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 							sample_offset=stco.chunk_offset_table.get(chunk_index);
-							System.out.println("Chunk "+(chunk_index+1));
 							
 							
 							for(int k=0;k<sample_count;k++) {
 								if(stts.time_to_sample_table.get(stts_index).sample_count==stts_count) {
 									sample_duration=(int)stts.time_to_sample_table.get(stts_index+1).sample_duration;
-									stsc_index++;
+									stts_index++;
 								}
 								boxes.MediaData sample=new boxes.MediaData();
 								sample.chunk_number=chunk_index+1;
@@ -932,19 +937,38 @@ public class Main {
 								sample.size=stsz.sample_size_table.get(sample_index).longValue();
 								
 								byte[] data=new byte[(int)sample.size];
-								fis.read(data);
-								sample.data=Util.ByteArrayToLong(data);
+								sample_stream.read(data);
+								sample.data=Util.ByteArrayToHex(data);
 								
 								mdat.datas.add(sample);
 								
+								video_sample_count++;
 								sample_index++;
 								stts_count++;
+								sample_stream.close();
 							}
 						}
 						stsc=null;
 						stsz=null;
 						stco = null;
 						stts=null;
+						
+//						for(int k=0;k<sample_index;k++) {
+//							System.out.println("Sample "+mdat.datas.get(k).sample_index);
+//							System.out.println("Offset: "+mdat.datas.get(k).offset+
+//									"\tSize: "+mdat.datas.get(k).size+
+//									"\tDuration: "+mdat.datas.get(k).duration+
+//									"\tData: "+mdat.datas.get(k).data);
+//						}
+//						
+						for(int k=0;k<5;k++) {
+							System.out.println("Sample "+mdat.datas.get(k).sample_index);
+							System.out.println("Offset: "+mdat.datas.get(k).offset+
+									"\tSize: "+mdat.datas.get(k).size+
+									"\tDuration: "+mdat.datas.get(k).duration+
+									"\tData: "+mdat.datas.get(k).data);
+						}
+						
 					}else if(full_boxes.get(i).type.equals("smhd")) { //audio
 						System.out.println("\nAudio Sample");
 						sample_index=0;
@@ -972,15 +996,18 @@ public class Main {
 						for(int j=i;j<full_box_count;j++) {
 							if(full_boxes.get(j).type.equals("stsz")) {
 								stsz=(boxes.SampleSizeBox) full_boxes.get(j);
+								break;
 							}
 						}
 						
 						for(int j=i;j<full_box_count;j++) {
 							if(full_boxes.get(j).type.equals("stts")) {
 								stts=(boxes.SampletoTableBox) full_boxes.get(j);
+								break;
 							}
 						}
 						sample_count=(int) stsc.table.get(0).samples_per_chunk;
+						sample_duration=(int) stts.time_to_sample_table.get(0).sample_duration;
 						for(chunk_index=0;chunk_index<stco.entry_count;chunk_index++) {
 							if((stsc_index+1)<stsc.entry_count) {
 								if(stsc.table.get(stsc_index+1).first_chunk==(chunk_index+1)) {
@@ -991,12 +1018,11 @@ public class Main {
 							InputStream sample_stream=new FileInputStream("BigBuckBunny.mp4");
 							sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 							sample_offset=stco.chunk_offset_table.get(chunk_index);
-							System.out.println("Chunk "+(chunk_index+1));
 							
 							for(int k=0;k<sample_count;k++) {
 								if(stts.time_to_sample_table.get(stts_index).sample_count==stts_count) {
 									sample_duration=(int)stts.time_to_sample_table.get(stts_index+1).sample_duration;
-									stsc_index++;
+									stts_index++;
 								}
 								boxes.MediaData sample=new boxes.MediaData();
 								sample.chunk_number=chunk_index+1;
@@ -1006,20 +1032,39 @@ public class Main {
 								sample.size=stsz.sample_size_table.get(sample_index).longValue();
 								
 								byte[] data=new byte[(int)sample.size];
-								fis.read(data);
-								sample.data=Util.ByteArrayToLong(data);
+								sample_stream.read(data);
+								sample.data=Util.ByteArrayToHex(data);
 								
 								mdat.datas.add(sample);
-								
 								sample_index++;
 								stts_count++;
 							}
+
+							sample_stream.close();
+						}
+						stsc=null;
+						stsz=null;
+						stco = null;
+						stts=null;
+
+//						for(int k=0;k<sample_index;k++) {
+//							System.out.println("Sample "+mdat.datas.get(k).sample_index);
+//							System.out.println("Offset: "+mdat.datas.get(k).offset+
+//									"\tSize: "+mdat.datas.get(k).size+
+//									"\tDuration: "+mdat.datas.get(k).duration+
+//									"\tData: "+mdat.datas.get(k).data);
+//						}
+//						
+						for(int k=video_sample_count;k<video_sample_count+5;k++) {
+							System.out.println("Sample "+mdat.datas.get(k).sample_index);
+							System.out.println("Offset: "+mdat.datas.get(k).offset+
+									"\tSize: "+mdat.datas.get(k).size+
+									"\tDuration: "+mdat.datas.get(k).duration+
+									"\tData: "+mdat.datas.get(k).data);
 						}
 					}
-					stsc=null;
-					stsz=null;
-					stco = null;
-					stts=null;
+					
+
 				}
 				boxes.add(mdat);
 				box_count++;
