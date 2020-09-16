@@ -1,6 +1,9 @@
 package boxes;
 
+import java.io.InputStream;
 import java.util.ArrayList;
+
+import main.Util;
 
 public class SampleSizeBox extends FullBox {
 
@@ -11,6 +14,39 @@ public class SampleSizeBox extends FullBox {
 	public SampleSizeBox(String boxtype, long v, long f) {//stsz
 		super(boxtype, v, f);
 		// TODO Auto-generated constructor stub
+	}
+	
+	public void SetSTSZBox(InputStream fis) throws Exception{
+		byte[] sample_size=new byte[4];
+		fis.read(sample_size);
+		this.sample_size=Util.ByteArrayToLong(sample_size);
+		
+		byte[] entry_count=new byte[4];
+		fis.read(entry_count);
+		this.entry_count=Util.ByteArrayToLong(entry_count);
+	}
+	
+	public void SetSTSZBox_Table(InputStream fis) throws Exception {
+		for(int i=0;i<this.entry_count;i++) {
+			
+			byte[] sample=new byte[4];
+			fis.read(sample);
+			this.sample_size_table.add(Util.ByteArrayToLong(sample));
+		}
+	}
+	
+	public void STSZBox_Table_Print() {
+		if(this.entry_count>50) {
+			System.out.println("\t\t\t\t\t\tSample Size Table\n");
+			for(int i=0;i<50;i++) {
+				System.out.println("\t\t\t\t\t\tSample "+i+": "+this.sample_size_table.get(i).longValue());
+			}
+		}else {
+			System.out.println("\t\t\t\t\t\tSample Size Table\n");
+			for(int i=0;i<this.entry_count;i++) {
+				System.out.println("\t\t\t\t\t\tSample "+i+": "+this.sample_size_table.get(i).longValue());
+			}
+		}
 	}
 	
 	@Override

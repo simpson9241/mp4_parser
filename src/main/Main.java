@@ -10,177 +10,80 @@ import java.util.TimeZone;
 import boxes.SampletoChunkBox;
 public class Main {
 	//stsd box 하위 구조 구현해야됨
+	//skip 왜 했는지 구조 쓰기
+	//프린트하는거 클래스 안에서 하게 빼내기
+	// 버전에 따른 구현도 클래스 안에서 할 수 있게 빼내기
 	public static void main(String[] args) throws Exception{
-		File file=new File("BigBuckBunny.mp4");
+//		File file=new File("video_960_30.mp4");
 //		if(file.isFile()) {
 //			System.out.println("파일 존재\n");
 //		}
-		
-		
 		int depth=0; //계층 구조 확인용
 		int which_first_flag=0; //moov 1 mdat 2
-		ArrayList<boxes.Box> boxes=new ArrayList<boxes.Box>();
-		ArrayList<boxes.FullBox> full_boxes=new ArrayList<boxes.FullBox>();
+		ArrayList<boxes.Box> boxes=new ArrayList<>();
+		ArrayList<boxes.FullBox> full_boxes=new ArrayList<>();
 		int box_count=0;
 		int full_box_count=0;
-		
 		StringBuilder tab=new StringBuilder();
-		
 		InputStream fis=new FileInputStream("BigBuckBunny.mp4");
-		
 		byte[] size_byte=new byte[4];
 		byte[] type_byte=new byte[4];
 		long size;
 		String type;
-		
 		Calendar cal=Calendar.getInstance();
 		cal.setTimeZone(TimeZone.getTimeZone("GMT"));
 		while(fis.read(size_byte)!=-1) {
-			
 			fis.read(type_byte);
 			size=Util.ByteArrayToLong(size_byte);
 			type=new String(type_byte,StandardCharsets.US_ASCII);
-			
 			if(type.equals("ftyp")) {
 				boxes.FileTypeBox ftyp=new boxes.FileTypeBox("ftyp");
 				ftyp.size=size;
-				byte[] major_brand=new byte[4];
-				fis.read(major_brand);
-				ftyp.major_brand=new String(major_brand,StandardCharsets.US_ASCII);
-				byte[] minor_version=new byte[4];
-				fis.read(minor_version);
-				ftyp.minor_version=Util.ByteArrayToLong(minor_version);
-				byte[] brands=new byte[(int)ftyp.size-16];
-				fis.read(brands);
-				String temp=new String(brands,StandardCharsets.US_ASCII);
-				int count=0;
-				StringBuffer sb=new StringBuffer();
-				sb.append(temp);
-				for(int i=4;i<temp.length();i=i+4) {
-					sb.insert(i+count, " ");
-					count++;
-				}
-				
-				ftyp.compatible_brands=sb.toString();
+				ftyp.SetFTYPBox(fis);
 				System.out.println(ftyp);
-				
 				boxes.add(ftyp);
 				box_count++;
-				
 				depth=0;
 			}else if(type.equals("moov")){
 				boxes.MovieBox moov=new boxes.MovieBox("moov");
 				moov.size=size;
 				System.out.println(moov);
-				
 				boxes.add(moov);
 				box_count++;
-				
 				depth=0;
 			}else if(type.equals("mvhd")){				
-				long creation_time;
-				long modification_time;
-				
-				
 				byte[] version=new byte[1];
 				fis.read(version);
 				long v=Util.ByteArrayToLong(version);
+				//flag 3바이트
 				fis.skip(3);
-				
 				boxes.MovieHeaderBox mvhd=new boxes.MovieHeaderBox("mvhd", v, 0);
-				
 				mvhd.size=size;
-				
-				if(v==1) {
-					byte[] creation_time_byte=new byte[8];
-					fis.read(creation_time_byte);
-					creation_time=Util.ByteArrayToLong(creation_time_byte);
-					byte[] modification_time_byte=new byte[8];
-					fis.read(modification_time_byte);
-					modification_time=Util.ByteArrayToLong(modification_time_byte);
-					byte[] duration=new byte[8];
-					byte[] timescale=new byte[4];
-					fis.read(timescale);
-					mvhd.timescale=Util.ByteArrayToLong(timescale);
-					fis.read(duration);
-					mvhd.duration=Util.ByteArrayToLong(duration);
-				}else {
-					byte[] creation_time_byte=new byte[4];
-					fis.read(creation_time_byte);
-					creation_time=Util.ByteArrayToLong(creation_time_byte);
-					byte[] modification_time_byte=new byte[4];
-					fis.read(modification_time_byte);
-					modification_time=Util.ByteArrayToLong(modification_time_byte);
-					byte[] timescale=new byte[4];
-					fis.read(timescale);
-					mvhd.timescale=Util.ByteArrayToLong(timescale);
-					byte[] duration=new byte[4];
-					fis.read(duration);
-					mvhd.duration=Util.ByteArrayToLong(duration);
-				}
-				
-				byte[] rate_1=new byte[2];
-				fis.read(rate_1);
-				byte[] rate_2=new byte[2];
-				fis.read(rate_2);
-				mvhd.rate=(double)Util.ByteArrayToLong(rate_1)+((double)Util.ByteArrayToLong(rate_2))*0.01;
-				
-				byte[] volume_1=new byte[1];
-				fis.read(volume_1);
-				byte[] volume_2=new byte[1];
-				fis.read(volume_2);
-				mvhd.volume=(double)Util.ByteArrayToLong(volume_1)+((double)Util.ByteArrayToLong(volume_2))*0.1;
-				
-				fis.skip(70);
-				
-				byte[] next_track_id=new byte[4];
-				fis.read(next_track_id);
-				mvhd.next_track_ID=Util.ByteArrayToLong(next_track_id);
-				
-				cal.set(1970, 0, 1, 0, 0, 0);
-				cal.add(Calendar.SECOND, -2082844800);
-				cal.add(Calendar.SECOND, (int)creation_time);
-				mvhd.creation_time=cal.getTime().toString();
-				
-				cal.set(1970, 0, 1, 0, 0, 0);
-				cal.add(Calendar.SECOND, -2082844800);
-				cal.add(Calendar.SECOND, (int)modification_time);
-				mvhd.modification_time=cal.getTime().toString();
-				
+				mvhd.SetMVHDBox(fis, cal);
 				System.out.println(mvhd);
-				
 				full_boxes.add(mvhd);
 				full_box_count++;
-				
 				depth=1;
 			}else if(type.equals("free")){
-				
 				boxes.FreeSpaceBox free=new boxes.FreeSpaceBox("free");
 				free.size=size;
 				fis.skip(free.size-8);
-							
 				for(int i=0;i<depth;i++) {
 					tab.append("\t");
 				}
-				
 				System.out.println(free.toString(tab.toString()));
 				tab.delete(0, tab.length());
-				
 				boxes.add(free);
 				box_count++;
-				
 			}else if(type.equals("skip")){
 				boxes.FreeSpaceBox skip=new boxes.FreeSpaceBox("skip");
 				skip.size=size;
 				fis.skip(skip.size-8);
-				
 				for(int i=0;i<depth;i++) {
 					tab.append("\t");
 				}
-				
 				System.out.println(skip.toString(tab.toString()));
 				tab.delete(0, tab.length());
-				
 				boxes.add(skip);
 				box_count++;
 			}else if(type.equals("trak")){
@@ -193,104 +96,25 @@ public class Main {
 				
 				depth=1;
 			}else if(type.equals("tkhd")){
-				long creation_time;
-				long modification_time;
-				
 				byte[] version=new byte[1];
 				fis.read(version);
 				long v=Util.ByteArrayToLong(version);
-
 				byte[] flags=new byte[3];
 				fis.read(flags);
 				long f=Util.ByteArrayToLong(flags);
-				
 				boxes.TrackHeaderBox tkhd=new boxes.TrackHeaderBox("tkhd", v, f);
-				
 				tkhd.size=size;
-				
-				if(v==1) {
-					byte[] creation_time_byte=new byte[8];
-					fis.read(creation_time_byte);
-					creation_time=Util.ByteArrayToLong(creation_time_byte);
-					byte[] modification_time_byte=new byte[8];
-					fis.read(modification_time_byte);
-					modification_time=Util.ByteArrayToLong(modification_time_byte);
-					byte[] track_ID=new byte[4];
-					fis.read(track_ID);
-					tkhd.track_ID=Util.ByteArrayToLong(track_ID);
-					fis.skip(4);
-					byte[] duration=new byte[8];
-					fis.read(duration);
-					tkhd.duration=Util.ByteArrayToLong(duration);
-				}else {
-					byte[] creation_time_byte=new byte[4];
-					fis.read(creation_time_byte);
-					creation_time=Util.ByteArrayToLong(creation_time_byte);
-					byte[] modification_time_byte=new byte[4];
-					fis.read(modification_time_byte);
-					modification_time=Util.ByteArrayToLong(modification_time_byte);
-					byte[] track_ID=new byte[4];
-					fis.read(track_ID);
-					tkhd.track_ID=Util.ByteArrayToLong(track_ID);
-					fis.skip(4);
-					byte[] duration=new byte[4];
-					fis.read(duration);
-					tkhd.duration=Util.ByteArrayToLong(duration);
-				}
-				fis.skip(8);
-				
-				byte[] layer=new byte[2];
-				fis.read(layer);
-				tkhd.layer=Util.ByteArrayToLong(layer);
-				
-				byte[] alternate_group=new byte[2];
-				fis.read(alternate_group);
-				tkhd.alternate_group=Util.ByteArrayToLong(alternate_group);
-				
-				byte[] volume_1=new byte[1];
-				fis.read(volume_1);
-				byte[] volume_2=new byte[1];
-				fis.read(volume_2);
-				tkhd.volume=(double)Util.ByteArrayToLong(volume_1)+((double)Util.ByteArrayToLong(volume_2))*0.1;
-				
-				fis.skip(38);
-				
-				byte[] track_width_1=new byte[2];
-				fis.read(track_width_1);
-				byte[] track_width_2=new byte[2];
-				fis.read(track_width_2);
-				tkhd.track_width=(double)Util.ByteArrayToLong(track_width_1)+((double)Util.ByteArrayToLong(track_width_2))*0.01;
-				
-				byte[] track_height_1=new byte[2];
-				fis.read(track_height_1);
-				byte[] track_height_2=new byte[2];
-				fis.read(track_height_2);
-				tkhd.track_height=(double)Util.ByteArrayToLong(track_height_1)+((double)Util.ByteArrayToLong(track_height_2))*0.01;
-
-				cal.set(1970, 0, 1, 0, 0, 0);
-				cal.add(Calendar.SECOND, -2082844800);
-				cal.add(Calendar.SECOND, (int)creation_time);
-				tkhd.creation_time=cal.getTime().toString();
-				
-				cal.set(1970, 0, 1, 0, 0, 0);
-				cal.add(Calendar.SECOND, -2082844800);
-				cal.add(Calendar.SECOND, (int)modification_time);
-				tkhd.modification_time=cal.getTime().toString();
-				
+				tkhd.SetTKHDBox(fis, cal);
 				System.out.println(tkhd);
-				
 				full_boxes.add(tkhd);
 				full_box_count++;
-				
 				depth=2;
 			}else if(type.equals("mdia")){
 				boxes.MediaBox mdia=new boxes.MediaBox("mdia");
 				mdia.size=size;
 				System.out.println(mdia);
-				
 				boxes.add(mdia);
 				box_count++;
-				
 				depth=2;
 			}else if(type.equals("udta")){
 				depth++;
@@ -299,154 +123,58 @@ public class Main {
 				for(int i=0;i<depth;i++) {
 					tab.append("\t");
 				}
-				
 				System.out.println(udta.toString(tab.toString()));
-
 				tab.delete(0, tab.length());
 				boxes.add(udta);
 				box_count++;
 			}else if(type.equals("mdhd")){
-				
-				long creation_time;
-				long modification_time;
-				
 				byte[] version=new byte[1];
 				fis.read(version);
 				long v=Util.ByteArrayToLong(version);
+				//flags set to 0
 				fis.skip(3);
-				
 				boxes.MediaHeaderBox mdhd=new boxes.MediaHeaderBox("mdhd", v, 0);
-				
 				mdhd.size=size;
-				
-				if(v==1) {
-					byte[] creation_time_byte=new byte[8];
-					fis.read(creation_time_byte);
-					creation_time=Util.ByteArrayToLong(creation_time_byte);
-					byte[] modification_time_byte=new byte[8];
-					fis.read(modification_time_byte);
-					modification_time=Util.ByteArrayToLong(modification_time_byte);
-					byte[] duration=new byte[8];
-					byte[] timescale=new byte[4];
-					fis.read(timescale);
-					mdhd.timescale=Util.ByteArrayToLong(timescale);
-					fis.read(duration);
-					mdhd.duration=Util.ByteArrayToLong(duration);
-				}else {
-					byte[] creation_time_byte=new byte[4];
-					fis.read(creation_time_byte);
-					creation_time=Util.ByteArrayToLong(creation_time_byte);
-					byte[] modification_time_byte=new byte[4];
-					fis.read(modification_time_byte);
-					modification_time=Util.ByteArrayToLong(modification_time_byte);
-					byte[] timescale=new byte[4];
-					fis.read(timescale);
-					mdhd.timescale=Util.ByteArrayToLong(timescale);
-					byte[] duration=new byte[4];
-					fis.read(duration);
-					mdhd.duration=Util.ByteArrayToLong(duration);
-				}
-				
-				byte[] language=new byte[2];
-				fis.read(language);
-				mdhd.language=Util.ByteArrayToLong(language);
-				
-				byte[] quality=new byte[2];
-				fis.read(quality);
-				mdhd.quality=Util.ByteArrayToLong(quality);
-				
-				cal.set(1970, 0, 1, 0, 0, 0);
-				cal.add(Calendar.SECOND, -2082844800);
-				cal.add(Calendar.SECOND, (int)creation_time);
-				mdhd.creation_time=cal.getTime().toString();
-				
-				cal.set(1970, 0, 1, 0, 0, 0);
-				cal.add(Calendar.SECOND, -2082844800);
-				cal.add(Calendar.SECOND, (int)modification_time);
-				mdhd.modification_time=cal.getTime().toString();
-				
+				mdhd.SetMDHDBox(fis, cal);
 				System.out.println(mdhd);
-				
 				full_boxes.add(mdhd);
 				full_box_count++;
 			}else if(type.equals("hdlr")){
 				depth++;
-				
 				byte[] version=new byte[1];
 				fis.read(version);
 				long v=Util.ByteArrayToLong(version);
+				//Flags
 				fis.skip(3);
-				
 				boxes.HandlerReferenceBox hdlr=new boxes.HandlerReferenceBox("hdlr", v, 0);
-				
 				hdlr.size=size;
-				
-				byte[] component_type_byte=new byte[4];
-				fis.read(component_type_byte);
-				hdlr.component_type=new String(component_type_byte,StandardCharsets.US_ASCII);
-				
-				byte[] component_subtype_byte=new byte[4];
-				fis.read(component_subtype_byte);
-				hdlr.component_subtype=new String(component_subtype_byte,StandardCharsets.US_ASCII);
-				
-				fis.skip(12);
-				
-				byte[] component_name_byte=new byte[(int)size-32];
-				fis.read(component_name_byte);
-				hdlr.component_name=new String(component_name_byte,StandardCharsets.US_ASCII);
-				
+				hdlr.SetHDLRBox(fis);
 				for(int i=0;i<depth;i++) {
 					tab.append("\t");
 				}
-				
 				System.out.println(hdlr.toString(tab.toString()));
 				tab.delete(0, tab.length());
-				
 				full_boxes.add(hdlr);
 				full_box_count++;
-				
 				depth--;
 			}else if(type.equals("minf")){
 				boxes.MediaInformationBox minf=new boxes.MediaInformationBox("minf");
 				minf.size=size;
 				System.out.println(minf);
-				
 				boxes.add(minf);
 				box_count++;
-				
 				depth=3;
 			}else if(type.equals("vmhd")){
-
 				byte[] version=new byte[1];
 				fis.read(version);
 				long v=Util.ByteArrayToLong(version);
-				
 				byte[] flags=new byte[3];
 				fis.read(flags);
 				long f=Util.ByteArrayToLong(flags);
-				
 				boxes.VideoMediaHeaderBox vmhd=new boxes.VideoMediaHeaderBox("vmhd", v, f);
-				
 				vmhd.size=size;
-				
-				byte[] graphics_mode=new byte[2];
-				fis.read(graphics_mode);
-				vmhd.graphics_mode=(int)Util.ByteArrayToLong(graphics_mode);
-				
-				byte[] opcolor_r=new byte[2];
-				fis.read(opcolor_r);
-				vmhd.opcolor_r=(int)Util.ByteArrayToLong(opcolor_r);
-				
-				byte[] opcolor_g=new byte[2];
-				fis.read(opcolor_g);
-				vmhd.opcolor_g=(int)Util.ByteArrayToLong(opcolor_g);
-				
-				byte[] opcolor_b=new byte[2];
-				fis.read(opcolor_b);
-				vmhd.opcolor_b=(int)Util.ByteArrayToLong(opcolor_b);
-				
+				vmhd.SetVMHDBox(fis);
 				System.out.println(vmhd);
-				
 				full_boxes.add(vmhd);
 				full_box_count++;
 			}else if(type.equals("dinf")){
@@ -456,14 +184,11 @@ public class Main {
 				
 				boxes.add(dinf);
 				box_count++;
-				
 				for(int i=0;i<depth;i++) {
 					tab.append("\t");
 				}
-				
 				System.out.println(dinf.toString(tab.toString()));
 				tab.delete(0, tab.length());
-				
 			}else if(type.equals("dref")){
 				depth++;
 				byte[] version=new byte[1];
@@ -477,9 +202,7 @@ public class Main {
 				boxes.DataReferenceBox dref=new boxes.DataReferenceBox("dref",v,f);
 				dref.size=size;
 				
-				byte[] entry_count=new byte[4];
-				fis.read(entry_count);
-				dref.entry_count=Util.ByteArrayToLong(entry_count);
+				dref.SetDREFBox(fis);
 				
 				full_boxes.add(dref);
 				full_box_count++;
@@ -491,53 +214,9 @@ public class Main {
 				System.out.println(dref.toString(tab.toString()));
 				
 				if(dref.entry_count!=0) {
-					for(int i=0;i<dref.entry_count;i++) {
-						boxes.DataReference datareference=new boxes.DataReference();
-						byte[] reference_size=new byte[4];
-						fis.read(reference_size);
-						datareference.size=Util.ByteArrayToLong(reference_size);
-						
-						byte[] reference_type=new byte[4];
-						fis.read(reference_type);
-						datareference.type=new String(reference_type,StandardCharsets.US_ASCII);
-						
-						byte[] reference_version=new byte[1];
-						fis.read(reference_version);
-						datareference.version=Util.ByteArrayToLong(reference_version);
-						
-						byte[] reference_flags=new byte[3];
-						fis.read(reference_flags);
-						datareference.flags=Util.ByteArrayToLong(reference_flags);
-						
-						byte[] reference_data=new byte[(int)datareference.size-12];
-						fis.read(reference_data);
-						datareference.data=new String(reference_data,StandardCharsets.US_ASCII);
-						dref.data_references.add(datareference);
-					}
+					dref.SetDREFBox_Table(fis);
+					dref.DREFBox_Table_Print(tab.toString());
 				}
-				
-				if(dref.entry_count!=0) {
-					if(dref.entry_count>50) {
-						System.out.println(tab+"Data References");
-						for(int i=0;i<50;i++) {
-							System.out.println(tab+"\tSize: "+dref.data_references.get(i).size+"\n"+
-												tab+"\tType: "+dref.data_references.get(i).type+"\n"+
-												tab+"\tVersion: "+dref.data_references.get(i).version+"\n"+
-												tab+"\tFlags: "+dref.data_references.get(i).flags+"\n"+
-												tab+"\tData: "+dref.data_references.get(i).data+"\n");
-						}
-					}else {
-						System.out.println(tab+"Data References");
-						for(int i=0;i<dref.entry_count;i++) {
-							System.out.println(tab+"\tSize: "+dref.data_references.get(i).size+"\n"+
-												tab+"\tType: "+dref.data_references.get(i).type+"\n"+
-												tab+"\tVersion: "+dref.data_references.get(i).version+"\n"+
-												tab+"\tFlags: "+dref.data_references.get(i).flags+"\n"+
-												tab+"\tData: "+dref.data_references.get(i).data+"\n");
-						}
-					}
-				}
-				
 				tab.delete(0, tab.length());
 				depth--;
 				
@@ -553,12 +232,10 @@ public class Main {
 			}else if(type.equals("stsd")){
 				boxes.SampleDescriptionBox stsd=new boxes.SampleDescriptionBox("stsd",0,0);
 				stsd.size=size;
-				
+				//version 1 byte flags 3 bytes
 				fis.skip(4);
 				
-				byte[] entry_count=new byte[4];
-				fis.read(entry_count);
-				stsd.entry_count=Util.ByteArrayToLong(entry_count);
+				stsd.SetSTSDBox(fis);
 				
 				System.out.println(stsd);
 				
@@ -575,12 +252,10 @@ public class Main {
 				fis.read(flags);
 				long f=Util.ByteArrayToLong(flags);
 				
-				boxes.SampletoTableBox stts=new boxes.SampletoTableBox("stts",v,f);
+				boxes.TimetoSampleBox stts=new boxes.TimetoSampleBox("stts",v,f);
 				stts.size=size;
 				
-				byte[] entry_count=new byte[4];
-				fis.read(entry_count);
-				stts.entry_count=Util.ByteArrayToLong(entry_count);
+				stts.SetSTTSBox(fis);
 				
 				full_boxes.add(stts);
 				full_box_count++;
@@ -588,33 +263,8 @@ public class Main {
 				System.out.println(stts);
 				
 				if(stts.entry_count!=0) {
-					for(int i=0;i<stts.entry_count;i++) {
-						boxes.TimetoSampleTable table=new boxes.TimetoSampleTable();
-
-						byte[] sample_count=new byte[4];
-						fis.read(sample_count);
-						table.sample_count=Util.ByteArrayToLong(sample_count);
-						
-						byte[] sample_duration=new byte[4];
-						fis.read(sample_duration);
-						table.sample_duration=Util.ByteArrayToLong(sample_duration);
-						
-						stts.time_to_sample_table.add(table);
-					}
-				}
-				
-				if(stts.entry_count!=0) {
-					if(stts.entry_count>50) {
-						System.out.println("\t\t\t\t\t\tTime-to-sample Table\n");
-						for(int i=0;i<50;i++) {
-							System.out.println("\t\t\t\t\t\tSample Count: "+stts.time_to_sample_table.get(i).sample_count+"\tSample Duration: "+stts.time_to_sample_table.get(i).sample_duration);
-						}
-					}else {
-						System.out.println("\t\t\t\t\t\tTime-to-sample Table\n");
-						for(int i=0;i<stts.entry_count;i++) {
-							System.out.println("\t\t\t\t\t\tSample Count: "+stts.time_to_sample_table.get(i).sample_count+"\tSample Duration: "+stts.time_to_sample_table.get(i).sample_duration);
-						}
-					}
+					stts.SetSTTSBox_Table(fis);
+					stts.STTSBox_Table_Print();
 				}
 			}else if(type.equals("stss")){
 				
@@ -629,9 +279,7 @@ public class Main {
 				boxes.SyncSampleBox stss=new boxes.SyncSampleBox("stss",v,f);
 				stss.size=size;
 				
-				byte[] entry_count=new byte[4];
-				fis.read(entry_count);
-				stss.entry_count=Util.ByteArrayToLong(entry_count);
+				stss.SetSTSSBox(fis);
 				
 				full_boxes.add(stss);
 				full_box_count++;
@@ -639,27 +287,10 @@ public class Main {
 				System.out.println(stss);
 				
 				if(stss.entry_count!=0) {
-					for(int i=0;i<stss.entry_count;i++) {
-						
-						byte[] sample=new byte[4];
-						fis.read(sample);
-						stss.sync_sample_table.add(Util.ByteArrayToLong(sample));
-					}
+					stss.SetSTSSBox_Table(fis);
+					stss.STSSBox_Table_Print();
 				}
 				
-				if(stss.entry_count!=0) {
-					if(stss.entry_count>50) {
-						System.out.println("\t\t\t\t\t\tSync Sample Table\n");
-						for(int i=0;i<50;i++) {
-							System.out.println("\t\t\t\t\t\tSample "+i+": "+stss.sync_sample_table.get(i).longValue());
-						}	
-					}else {
-						System.out.println("\t\t\t\t\t\tSync Sample Table\n");
-						for(int i=0;i<stss.entry_count;i++) {
-							System.out.println("\t\t\t\t\t\tSample "+i+": "+stss.sync_sample_table.get(i).longValue());
-						}
-					}
-				}
 			}else if(type.equals("stsc")){
 				
 				byte[] version=new byte[1];
@@ -673,9 +304,7 @@ public class Main {
 				boxes.SampletoChunkBox stsc=new boxes.SampletoChunkBox("stsc",v,f);
 				stsc.size=size;
 				
-				byte[] entry_count=new byte[4];
-				fis.read(entry_count);
-				stsc.entry_count=Util.ByteArrayToLong(entry_count);
+				stsc.SetSTSCBox(fis);
 				
 				full_boxes.add(stsc);
 				full_box_count++;
@@ -683,37 +312,8 @@ public class Main {
 				System.out.println(stsc);
 				
 				if(stsc.entry_count!=0) {
-					for(int i=0;i<stsc.entry_count;i++) {
-						boxes.SampletoChunkTable table=new boxes.SampletoChunkTable();
-
-						byte[] first_chunk=new byte[4];
-						fis.read(first_chunk);
-						table.first_chunk=Util.ByteArrayToLong(first_chunk);
-						
-						byte[] samples_per_chunk=new byte[4];
-						fis.read(samples_per_chunk);
-						table.samples_per_chunk=Util.ByteArrayToLong(samples_per_chunk);
-						
-						byte[] sample_description_id=new byte[4];
-						fis.read(sample_description_id);
-						table.sample_description_id=Util.ByteArrayToLong(sample_description_id);
-						
-						stsc.table.add(table);
-					}
-				}
-				
-				if(stsc.entry_count!=0) {
-					if(stsc.entry_count>50) {
-						System.out.println("\t\t\t\t\t\tSample-to-Chunk Table\n");
-						for(int i=0;i<50;i++) {
-							System.out.println("\t\t\t\t\t\tFirst Chunk: "+stsc.table.get(i).first_chunk+"\tSamples per Chunk: "+stsc.table.get(i).samples_per_chunk+"\tSample Description ID: "+stsc.table.get(i).sample_description_id);
-						}
-					}else {
-						System.out.println("\t\t\t\t\t\tSample-to-Chunk Table\n");
-						for(int i=0;i<stsc.entry_count;i++) {
-							System.out.println("\t\t\t\t\t\tFirst Chunk: "+stsc.table.get(i).first_chunk+"\tSamples per Chunk: "+stsc.table.get(i).samples_per_chunk+"\tSample Description ID: "+stsc.table.get(i).sample_description_id);
-						}
-					}
+					stsc.SetSTSCBox_Table(fis);
+					stsc.STSCBox_Table_Print();
 				}
 			}else if(type.equals("stsz")){
 				
@@ -728,39 +328,13 @@ public class Main {
 				boxes.SampleSizeBox stsz=new boxes.SampleSizeBox("stsz",v,f);
 				stsz.size=size;
 				
-				byte[] sample_size=new byte[4];
-				fis.read(sample_size);
-				stsz.sample_size=Util.ByteArrayToLong(sample_size);
-				
-				byte[] entry_count=new byte[4];
-				fis.read(entry_count);
-				stsz.entry_count=Util.ByteArrayToLong(entry_count);
-				
+				stsz.SetSTSZBox(fis);
 								
 				System.out.println(stsz);
 				
 				if(stsz.entry_count!=0) {
-					for(int i=0;i<stsz.entry_count;i++) {
-						
-						byte[] sample=new byte[4];
-						fis.read(sample);
-						stsz.sample_size_table.add(Util.ByteArrayToLong(sample));
-					}
-				}
-				
-				if(stsz.entry_count!=0) {
-					if(stsz.entry_count>50) {
-						System.out.println("\t\t\t\t\t\tSample Size Table\n");
-						for(int i=0;i<50;i++) {
-							System.out.println("\t\t\t\t\t\tSample "+i+": "+stsz.sample_size_table.get(i).longValue());
-						}
-					}else {
-						System.out.println("\t\t\t\t\t\tSample Size Table\n");
-						for(int i=0;i<stsz.entry_count;i++) {
-							System.out.println("\t\t\t\t\t\tSample "+i+": "+stsz.sample_size_table.get(i).longValue());
-						}
-					}
-					
+					stsz.SetSTSZBox_Table(fis);
+					stsz.STSZBox_Table_Print();
 				}
 
 				full_boxes.add(stsz);
@@ -780,13 +354,7 @@ public class Main {
 				
 				smhd.size=size;
 				
-				byte[] balance=new byte[2];
-				fis.read(balance);
-				smhd.balance=(int)Util.ByteArrayToLong(balance);
-				
-				byte[] reserved=new byte[2];
-				fis.read(reserved);
-				smhd.reserved=(int)Util.ByteArrayToLong(reserved);
+				smhd.SetSMHDBox(fis);
 				
 				System.out.println(smhd);
 				
@@ -805,34 +373,13 @@ public class Main {
 				boxes.ChunkOffsetBox stco=new boxes.ChunkOffsetBox("stco",v,f);
 				stco.size=size;
 				
-				byte[] entry_count=new byte[4];
-				fis.read(entry_count);
-				stco.entry_count=Util.ByteArrayToLong(entry_count);
+				stco.SetSTCOBox(fis);
 				
-								
 				System.out.println(stco);
 				
 				if(stco.entry_count!=0) {
-					for(int i=0;i<stco.entry_count;i++) {
-						
-						byte[] offset=new byte[4];
-						fis.read(offset);
-						stco.chunk_offset_table.add(Util.ByteArrayToLong(offset));
-					}
-				}
-				
-				if(stco.entry_count!=0) {
-					if(stco.entry_count>50) {
-						System.out.println("\t\t\t\t\t\tChunk Offset Table\n");
-						for(int i=0;i<50;i++) {
-							System.out.println("\t\t\t\t\t\tSample "+i+": "+stco.chunk_offset_table.get(i).longValue());
-						}
-					}else {
-						System.out.println("\t\t\t\t\t\tChunk Offset Table\n");
-						for(int i=0;i<stco.entry_count;i++) {
-							System.out.println("\t\t\t\t\t\tSample "+i+": "+stco.chunk_offset_table.get(i).longValue());
-						}
-					}
+					stco.SetSTCOBox_Table(fis);
+					stco.STCOBox_Table_Print();
 				}
 
 				full_boxes.add(stco);
@@ -855,7 +402,9 @@ public class Main {
 				int sample_duration=0;
 				long sample_offset=0;
 				int video_sample_count=0;
+				int stss_index=0;
 				int audio_sample_count=0;
+				int keyframe_index=0;
 				
 				if(size==1) {
 					System.out.println("mdat\n"+
@@ -869,7 +418,8 @@ public class Main {
 				boxes.SampletoChunkBox stsc=null;
 				boxes.SampleSizeBox stsz=null;
 				boxes.ChunkOffsetBox stco = null;
-				boxes.SampletoTableBox stts=null;
+				boxes.TimetoSampleBox stts=null;
+				boxes.SyncSampleBox stss=null;
 				for(int i=0;i<full_box_count;i++) {
 					if(full_boxes.get(i).type.equals("vmhd")) { //video
 						sample_index=0;
@@ -879,37 +429,20 @@ public class Main {
 						stts_index=0;
 						stts_count=0;
 						sample_duration=0;
+						stss_index=0;
 						sample_offset=0;
 						System.out.println("\nVideo Sample");
 						
-						for(int j=i;j<full_box_count;j++) {
-							if(full_boxes.get(j).type.equals("stco")) {
-								stco=(boxes.ChunkOffsetBox) full_boxes.get(j);
-								break;
-							}
+						stco=mdat.FindSTCO(i, full_boxes, full_box_count);
+						stss=mdat.FindSTSS(i, full_boxes, full_box_count);
+						stsc=mdat.FindSTSC(i, full_boxes, full_box_count);
+						stsz=mdat.FindSTSZ(i, full_boxes, full_box_count);
+						stts=mdat.FindSTTS(i, full_boxes, full_box_count);
+						if(stss!=null) {
+							keyframe_index=(int)stss.sync_sample_table.get(stss_index).intValue();
+						}else {
+							keyframe_index=-1;
 						}
-						
-						for(int j=i;j<full_box_count;j++) {
-							if(full_boxes.get(j).type.equals("stsc")) {
-								stsc=(boxes.SampletoChunkBox) full_boxes.get(j);
-								break;
-							}
-						}
-						
-						for(int j=i;j<full_box_count;j++) {
-							if(full_boxes.get(j).type.equals("stsz")) {
-								stsz=(boxes.SampleSizeBox) full_boxes.get(j);
-								break;
-							}
-						}
-						
-						for(int j=i;j<full_box_count;j++) {
-							if(full_boxes.get(j).type.equals("stts")) {
-								stts=(boxes.SampletoTableBox) full_boxes.get(j);
-								break;
-							}
-						}
-						
 						sample_count=(int) stsc.table.get(0).samples_per_chunk;
 						sample_duration=(int) stts.time_to_sample_table.get(0).sample_duration;
 						for(chunk_index=0;chunk_index<stco.entry_count;chunk_index++) {
@@ -935,7 +468,14 @@ public class Main {
 								sample.offset=sample_offset;
 								sample.sample_index=sample_index+1;
 								sample.size=stsz.sample_size_table.get(sample_index).longValue();
-								
+								if(keyframe_index==-1) {
+									sample.iskeyframe=1;
+								}else if((sample.sample_index==keyframe_index)) {
+									sample.iskeyframe=1;
+									if(stss.entry_count!=(stss_index+1)) {
+										keyframe_index=stss.sync_sample_table.get(++stss_index).intValue();	
+									}
+								}
 								byte[] data=new byte[(int)sample.size];
 								sample_stream.read(data);
 								sample.data=Util.ByteArrayToHex(data);
@@ -952,6 +492,7 @@ public class Main {
 						stsz=null;
 						stco = null;
 						stts=null;
+						stss=null;
 						
 //						for(int k=0;k<sample_index;k++) {
 //							System.out.println("Sample "+mdat.datas.get(k).sample_index);
@@ -962,13 +503,8 @@ public class Main {
 //						}
 //						
 						for(int k=0;k<5;k++) {
-							System.out.println("Sample "+mdat.datas.get(k).sample_index);
-							System.out.println("Offset: "+mdat.datas.get(k).offset+
-									"\tSize: "+mdat.datas.get(k).size+
-									"\tDuration: "+mdat.datas.get(k).duration+
-									"\tData: "+mdat.datas.get(k).data);
+							mdat.MDATBox_Datas_Print(k);
 						}
-						
 					}else if(full_boxes.get(i).type.equals("smhd")) { //audio
 						System.out.println("\nAudio Sample");
 						sample_index=0;
@@ -979,33 +515,12 @@ public class Main {
 						stts_count=0;
 						sample_duration=0;
 						sample_offset=0;
-						for(int j=i;j<full_box_count;j++) {
-							if(full_boxes.get(j).type.equals("stco")) {
-								stco=(boxes.ChunkOffsetBox) full_boxes.get(j);
-								break;
-							}
-						}
+						stss_index=0;
+						stco=mdat.FindSTCO(i, full_boxes, full_box_count);
+						stsc=mdat.FindSTSC(i, full_boxes, full_box_count);
+						stsz=mdat.FindSTSZ(i, full_boxes, full_box_count);
+						stts=mdat.FindSTTS(i, full_boxes, full_box_count);
 						
-						for(int j=i;j<full_box_count;j++) {
-							if(full_boxes.get(j).type.equals("stsc")) {
-								stsc=(boxes.SampletoChunkBox) full_boxes.get(j);
-								break;
-							}
-						}
-						
-						for(int j=i;j<full_box_count;j++) {
-							if(full_boxes.get(j).type.equals("stsz")) {
-								stsz=(boxes.SampleSizeBox) full_boxes.get(j);
-								break;
-							}
-						}
-						
-						for(int j=i;j<full_box_count;j++) {
-							if(full_boxes.get(j).type.equals("stts")) {
-								stts=(boxes.SampletoTableBox) full_boxes.get(j);
-								break;
-							}
-						}
 						sample_count=(int) stsc.table.get(0).samples_per_chunk;
 						sample_duration=(int) stts.time_to_sample_table.get(0).sample_duration;
 						for(chunk_index=0;chunk_index<stco.entry_count;chunk_index++) {
@@ -1038,6 +553,7 @@ public class Main {
 								mdat.datas.add(sample);
 								sample_index++;
 								stts_count++;
+								audio_sample_count++;
 							}
 
 							sample_stream.close();
@@ -1046,6 +562,7 @@ public class Main {
 						stsz=null;
 						stco = null;
 						stts=null;
+						stss=null;
 
 //						for(int k=0;k<sample_index;k++) {
 //							System.out.println("Sample "+mdat.datas.get(k).sample_index);
@@ -1056,11 +573,7 @@ public class Main {
 //						}
 //						
 						for(int k=video_sample_count;k<video_sample_count+5;k++) {
-							System.out.println("Sample "+mdat.datas.get(k).sample_index);
-							System.out.println("Offset: "+mdat.datas.get(k).offset+
-									"\tSize: "+mdat.datas.get(k).size+
-									"\tDuration: "+mdat.datas.get(k).duration+
-									"\tData: "+mdat.datas.get(k).data);
+							mdat.MDATBox_Datas_Print(k);
 						}
 					}
 					

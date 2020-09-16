@@ -1,5 +1,10 @@
 package boxes;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
+import main.Util;
+
 public class VideoMediaHeaderBox extends FullBox{
 
 	public int graphics_mode;
@@ -13,6 +18,24 @@ public class VideoMediaHeaderBox extends FullBox{
 		// TODO Auto-generated constructor stub
 	}
 
+	public void SetVMHDBox(InputStream fis) throws Exception {
+		byte[] graphics_mode=new byte[2];
+		fis.read(graphics_mode);
+		this.graphics_mode=(int)Util.ByteArrayToLong(graphics_mode);
+		
+		byte[] opcolor_r=new byte[2];
+		fis.read(opcolor_r);
+		this.opcolor_r=(int)Util.ByteArrayToLong(opcolor_r);
+		
+		byte[] opcolor_g=new byte[2];
+		fis.read(opcolor_g);
+		this.opcolor_g=(int)Util.ByteArrayToLong(opcolor_g);
+		
+		byte[] opcolor_b=new byte[2];
+		fis.read(opcolor_b);
+		this.opcolor_b=(int)Util.ByteArrayToLong(opcolor_b);
+		
+	}
 	
 	@Override
 	public String toString() {
