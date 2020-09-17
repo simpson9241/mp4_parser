@@ -6,6 +6,9 @@ import java.nio.charset.StandardCharsets;
 import main.Util;
 
 public class AVC1Box {
+	public int struct_depth;
+	public long start_position;
+	public long end_position;
 	public long sample_description_size;
 	public String data_format;
 	public long data_reference_index;

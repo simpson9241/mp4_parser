@@ -18,6 +18,9 @@ public class Main {
 //		if(file.isFile()) {
 //			System.out.println("파일 존재\n");
 //		}
+		long stream_position=0;
+		int mdat_position_flag=0;//먼저오면 0 나중에 오면 1
+		int ismdatafter=0;
 		int fragment_flag=0; //moof가 있으면 fmp4 -> 1
 		int depth = 0; // 계층 구조 확인용
 		int which_first_flag = 0; // moov 1 mdat 2
@@ -26,9 +29,10 @@ public class Main {
 		int box_count = 0;
 		int full_box_count = 0;
 		StringBuilder tab = new StringBuilder();
-		InputStream fis = new FileInputStream("BigBuckBunny.mp4");
+		InputStream fis = new FileInputStream("output.mp4");
 		byte[] size_byte = new byte[4];
 		byte[] type_byte = new byte[4];
+		byte[] mdat_storage;
 		long size;
 		String type;
 		Calendar cal = Calendar.getInstance();
@@ -39,6 +43,10 @@ public class Main {
 			type = new String(type_byte, StandardCharsets.US_ASCII);
 			if (type.equals("ftyp")) {
 				boxes.FileTypeBox ftyp = new boxes.FileTypeBox("ftyp");
+				ftyp.struct_depth=0;
+				ftyp.start_position=stream_position;
+				ftyp.end_position=stream_position+size;
+				stream_position+=size;
 				ftyp.size = size;
 				ftyp.SetFTYPBox(fis);
 				System.out.println(ftyp);
@@ -47,11 +55,16 @@ public class Main {
 				depth = 0;
 			} else if (type.equals("moov")) {
 				boxes.MovieBox moov = new boxes.MovieBox("moov");
+				moov.struct_depth=0;
 				moov.size = size;
 				System.out.println(moov);
 				boxes.add(moov);
 				box_count++;
 				depth = 0;
+				mdat_position_flag=1;
+				moov.start_position=stream_position;
+				moov.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("mvhd")) {
 				byte[] version = new byte[1];
 				fis.read(version);
@@ -59,14 +72,21 @@ public class Main {
 				// flag 3바이트
 				fis.skip(3);
 				boxes.MovieHeaderBox mvhd = new boxes.MovieHeaderBox("mvhd", v, 0);
+				mvhd.struct_depth=1;
 				mvhd.size = size;
 				mvhd.SetMVHDBox(fis, cal);
 				System.out.println(mvhd);
 				full_boxes.add(mvhd);
 				full_box_count++;
 				depth = 1;
+				mvhd.start_position=stream_position;
+				mvhd.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("free")) {
 				boxes.FreeSpaceBox free = new boxes.FreeSpaceBox("free");
+//				
+//				for(int i=)
+//				
 				free.size = size;
 				fis.skip(free.size - 8);
 				for (int i = 0; i < depth; i++) {
@@ -76,6 +96,9 @@ public class Main {
 				tab.delete(0, tab.length());
 				boxes.add(free);
 				box_count++;
+				free.start_position=stream_position;
+				free.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("skip")) {
 				boxes.FreeSpaceBox skip = new boxes.FreeSpaceBox("skip");
 				skip.size = size;
@@ -87,6 +110,9 @@ public class Main {
 				tab.delete(0, tab.length());
 				boxes.add(skip);
 				box_count++;
+				skip.start_position=stream_position;
+				skip.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("trak")) {
 				boxes.TrackBox trak = new boxes.TrackBox("trak");
 				trak.size = size;
@@ -96,6 +122,9 @@ public class Main {
 				box_count++;
 
 				depth = 1;
+				trak.start_position=stream_position;
+				trak.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("tkhd")) {
 				byte[] version = new byte[1];
 				fis.read(version);
@@ -110,6 +139,9 @@ public class Main {
 				full_boxes.add(tkhd);
 				full_box_count++;
 				depth = 2;
+				tkhd.start_position=stream_position;
+				tkhd.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("mdia")) {
 				boxes.MediaBox mdia = new boxes.MediaBox("mdia");
 				mdia.size = size;
@@ -117,8 +149,11 @@ public class Main {
 				boxes.add(mdia);
 				box_count++;
 				depth = 2;
+				mdia.start_position=stream_position;
+				mdia.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("udta")) {
-				depth++;
+				
 				boxes.UserDataBox udta = new boxes.UserDataBox("udta");
 				udta.size = size;
 				for (int i = 0; i < depth; i++) {
@@ -128,6 +163,10 @@ public class Main {
 				tab.delete(0, tab.length());
 				boxes.add(udta);
 				box_count++;
+				udta.start_position=stream_position;
+				udta.end_position=stream_position+size;
+				stream_position+=size;
+				
 			} else if (type.equals("mdhd")) {
 				byte[] version = new byte[1];
 				fis.read(version);
@@ -140,6 +179,9 @@ public class Main {
 				System.out.println(mdhd);
 				full_boxes.add(mdhd);
 				full_box_count++;
+				mdhd.start_position=stream_position;
+				mdhd.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("hdlr")) {
 				depth++;
 				byte[] version = new byte[1];
@@ -158,6 +200,9 @@ public class Main {
 				full_boxes.add(hdlr);
 				full_box_count++;
 				depth--;
+				hdlr.start_position=stream_position;
+				hdlr.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("minf")) {
 				boxes.MediaInformationBox minf = new boxes.MediaInformationBox("minf");
 				minf.size = size;
@@ -165,6 +210,9 @@ public class Main {
 				boxes.add(minf);
 				box_count++;
 				depth = 3;
+				minf.start_position=stream_position;
+				minf.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("vmhd")) {
 				byte[] version = new byte[1];
 				fis.read(version);
@@ -178,6 +226,9 @@ public class Main {
 				System.out.println(vmhd);
 				full_boxes.add(vmhd);
 				full_box_count++;
+				vmhd.start_position=stream_position;
+				vmhd.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("dinf")) {
 				depth++;
 				boxes.DataInformationBox dinf = new boxes.DataInformationBox("dinf");
@@ -190,8 +241,14 @@ public class Main {
 				}
 				System.out.println(dinf.toString(tab.toString()));
 				tab.delete(0, tab.length());
+				dinf.start_position=stream_position;
+				dinf.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("dref")) {
-				depth++;
+				
+				
+				
+				
 				byte[] version = new byte[1];
 				fis.read(version);
 				long v = Util.ByteArrayToLong(version);
@@ -219,8 +276,10 @@ public class Main {
 					dref.DREFBox_Table_Print(tab.toString());
 				}
 				tab.delete(0, tab.length());
-				depth--;
 
+				dref.start_position=stream_position;
+				dref.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("stbl")) {
 				boxes.SampleTableBox stbl = new boxes.SampleTableBox("stbl");
 				stbl.size = size;
@@ -230,6 +289,10 @@ public class Main {
 				box_count++;
 
 				depth = 4;
+				
+				stbl.start_position=stream_position;
+				stbl.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("stsd")) {
 				boxes.SampleDescriptionBox stsd = new boxes.SampleDescriptionBox("stsd", 0, 0);
 				stsd.size = size;
@@ -243,12 +306,18 @@ public class Main {
 				full_boxes.add(stsd);
 				full_box_count++;
 
+				stsd.start_position=stream_position;
+				stsd.end_position=stream_position+size;
+				stream_position+=size;
 			} else if(type.equals("avc1")){
 				boxes.AVC1Box avc1=new boxes.AVC1Box();
 				avc1.sample_description_size=size;
 				avc1.data_format=type;
 				avc1.SetAVC1Box(fis);
 				System.out.println(avc1);
+				avc1.start_position=stream_position;
+				avc1.end_position=stream_position+size;
+				stream_position+=size;
 			}else if(type.equals("avcC")){
 				//ISO/IEC 14496-15 18페이지
 				boxes.AVCCBox avcc=new boxes.AVCCBox();
@@ -256,12 +325,18 @@ public class Main {
 				avcc.type=type;
 				avcc.SetAVCCBox(fis);
 				System.out.println(avcc);
+				avcc.start_position=stream_position;
+				avcc.end_position=stream_position+size;
+				stream_position+=size;
 			}else if(type.equals("mp4a")){
-				boxes.AVC1Box avc1=new boxes.AVC1Box();
-				avc1.sample_description_size=size;
-				avc1.data_format=type;
-				avc1.SetAVC1Box(fis);
-				System.out.println(avc1);
+				boxes.MP4ABox mp4a=new boxes.MP4ABox();
+				mp4a.sample_description_size=size;
+				mp4a.data_format=type;
+				mp4a.SetMP4ABox(fis);
+				System.out.println(mp4a);
+				mp4a.start_position=stream_position;
+				mp4a.end_position=stream_position+size;
+				stream_position+=size;
 			}else if (type.equals("stts")) {
 
 				byte[] version = new byte[1];
@@ -286,6 +361,9 @@ public class Main {
 					stts.SetSTTSBox_Table(fis);
 					stts.STTSBox_Table_Print();
 				}
+				stts.start_position=stream_position;
+				stts.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("stss")) {
 
 				byte[] version = new byte[1];
@@ -310,7 +388,9 @@ public class Main {
 					stss.SetSTSSBox_Table(fis);
 					stss.STSSBox_Table_Print();
 				}
-
+				stss.start_position=stream_position;
+				stss.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("stsc")) {
 
 				byte[] version = new byte[1];
@@ -335,6 +415,10 @@ public class Main {
 					stsc.SetSTSCBox_Table(fis);
 					stsc.STSCBox_Table_Print();
 				}
+				
+				stsc.start_position=stream_position;
+				stsc.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("stsz")) {
 
 				byte[] version = new byte[1];
@@ -360,6 +444,9 @@ public class Main {
 				full_boxes.add(stsz);
 				full_box_count++;
 
+				stsz.start_position=stream_position;
+				stsz.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("smhd")) {
 
 				byte[] version = new byte[1];
@@ -380,6 +467,10 @@ public class Main {
 
 				full_boxes.add(smhd);
 				full_box_count++;
+				
+				smhd.start_position=stream_position;
+				smhd.end_position=stream_position+size;
+				stream_position+=size;
 			} else if (type.equals("stco")) {
 
 				byte[] version = new byte[1];
@@ -404,7 +495,11 @@ public class Main {
 
 				full_boxes.add(stco);
 				full_box_count++;
-			} else if (type.equals("mdat")&&(fragment_flag==0)) {
+				
+				stco.start_position=stream_position;
+				stco.end_position=stream_position+size;
+				stream_position+=size;
+			} else if (type.equals("mdat")&&(fragment_flag==0)&&(mdat_position_flag==1)) {
 				boxes.MediaDataBox mdat = new boxes.MediaDataBox("mdat");
 				mdat.size = size;
 				fis.skip(size);
@@ -589,7 +684,10 @@ public class Main {
 				boxes.add(mdat);
 				box_count++;
 				depth = 0;
-			}else if (type.equals("mdat")&&(fragment_flag==1)) {
+				mdat.start_position=stream_position;
+				mdat.end_position=stream_position+size;
+				stream_position+=size;
+			}else if (type.equals("mdat")&&(fragment_flag==1)&&(mdat_position_flag==1)) {
 				boxes.MediaDataBox mdat = new boxes.MediaDataBox("mdat");
 				mdat.size = size;
 				fis.skip(size);
@@ -774,13 +872,26 @@ public class Main {
 				boxes.add(mdat);
 				box_count++;
 				depth = 0;
-			} else {
+				mdat.start_position=stream_position;
+				mdat.end_position=stream_position+size;
+				stream_position+=size;
+			} else if(type.equals("mdat")&&(mdat_position_flag)==0) {
+				mdat_storage=new byte[(int)size-8];
+				fis.read(mdat_storage);
+				ismdatafter=1;
+			}else {
 				System.out.println(size);
 				System.out.println(type);
 				fis.skip(size - 8);
 			}
 		}
 		fis.close();
+		
+		if(ismdatafter==1) {//mdat 나중에 까기
+			
+		}
+		
+		
 		System.out.println("\nFinished");
 	}
 }

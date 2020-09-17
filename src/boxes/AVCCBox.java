@@ -7,6 +7,9 @@ import main.Util;
 
 public class AVCCBox {
 	//ISO/IEC 14496-15 18페이지
+	public int struct_depth;
+	public long start_position;
+	public long end_position;
 	public long size;
 	public String type;
 	public int configurationVersion=1;
