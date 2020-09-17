@@ -7,7 +7,9 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.TimeZone;
 
+import boxes.PictureParameterSet;
 import boxes.SampletoChunkBox;
+import boxes.SequenceParameterSet;
 
 public class Main {
 	// stsd box 하위 구조 구현해야됨
@@ -242,6 +244,19 @@ public class Main {
 				full_box_count++;
 
 			} else if(type.equals("avc1")){
+				boxes.AVC1Box avc1=new boxes.AVC1Box();
+				avc1.sample_description_size=size;
+				avc1.data_format=type;
+				avc1.SetAVC1Box(fis);
+				System.out.println(avc1);
+			}else if(type.equals("avcC")){
+				//ISO/IEC 14496-15 18페이지
+				boxes.AVCCBox avcc=new boxes.AVCCBox();
+				avcc.size=size;
+				avcc.type=type;
+				avcc.SetAVCCBox(fis);
+				System.out.println(avcc);
+			}else if(type.equals("mp4a")){
 				boxes.AVC1Box avc1=new boxes.AVC1Box();
 				avc1.sample_description_size=size;
 				avc1.data_format=type;
