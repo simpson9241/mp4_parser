@@ -99,7 +99,7 @@ public class Main {
 				
 				
 				MovieExtendsHeaderBox mehd = new MovieExtendsHeaderBox("mehd", v, f);
-				mehd.struct_depth=1;
+				mehd.struct_depth=2;
 				mehd.size = size;
 				mehd.SetMEHDBox(fis);
 				System.out.println(mehd);
@@ -107,8 +107,26 @@ public class Main {
 				full_box_count++;
 				mehd.start_position=stream_position;
 				mehd.end_position=stream_position+size;
-				stream_position+=8;
-			}  else if (type.equals("mvhd")) {
+				stream_position+=size;
+			} else if (type.equals("trex")) {
+				byte[] version = new byte[1];
+				fis.read(version);
+				long v = Util.ByteArrayToLong(version);
+				
+				byte[] flags = new byte[3];
+				fis.read(flags);
+				long f = Util.ByteArrayToLong(flags);
+				TrackExtendsBox trex = new TrackExtendsBox("trex", v, f);
+				trex.struct_depth=2;
+				trex.size = size;
+				trex.SetTREXBox(fis);
+				System.out.println(trex);
+				full_boxes.add(trex);
+				full_box_count++;
+				trex.start_position=stream_position;
+				trex.end_position=stream_position+size;
+				stream_position+=size;
+			} else if (type.equals("mvhd")) {
 				byte[] version = new byte[1];
 				fis.read(version);
 				long v = Util.ByteArrayToLong(version);
