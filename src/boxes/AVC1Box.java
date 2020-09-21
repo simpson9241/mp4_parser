@@ -5,7 +5,12 @@ import java.nio.charset.StandardCharsets;
 
 import main.Util;
 
-public class AVC1Box {
+public class AVC1Box extends FullBox{
+	public AVC1Box(String boxtype, long v, long f) {
+		super(boxtype, v, f);
+		// TODO Auto-generated constructor stub
+	}
+
 	public int struct_depth;
 	public long start_position;
 	public long end_position;

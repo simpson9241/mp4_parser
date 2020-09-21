@@ -5,12 +5,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.TimeZone;
-import org.apache.commons.io.input.*;
-
-import boxes.TrackBox;
+import boxes.*;
 
 public class Main {
-	// stsd box 하위 구조 구현해야됨
 	public static void main(String[] args) throws Exception {
 //		File file=new File("video_960_30.mp4");
 //		if(file.isFile()) {
@@ -27,7 +24,7 @@ public class Main {
 		int box_count = 0;
 		int full_box_count = 0;
 		StringBuilder tab = new StringBuilder();
-		InputStream fis = new FileInputStream("output.mp4");
+		FileInputStream fis = new FileInputStream("video_960_30.mp4");
 		byte[] size_byte = new byte[4];
 		byte[] type_byte = new byte[4];
 		byte[] mdat_storage;
@@ -37,12 +34,26 @@ public class Main {
 		cal.setTimeZone(TimeZone.getTimeZone("GMT"));
 		long mdat_size=0;
 		long mdat_largesize=0;
+		
+
+		int sample_index = -1;
+		int stsc_index = 0;
+		int chunk_index = 0;
+		int sample_count = 0;
+		int stts_index = 0;
+		int stts_count = 0;
+		int sample_duration = 0;
+		long sample_offset = 0;
+		int video_sample_count = 0;
+		int stss_index = 0;
+		int audio_sample_count = 0;
+		int keyframe_index = 0;
 		while (fis.read(size_byte) != -1) {
 			fis.read(type_byte);
 			size = Util.ByteArrayToLong(size_byte);
 			type = new String(type_byte, StandardCharsets.US_ASCII);
 			if (type.equals("ftyp")) {
-				boxes.FileTypeBox ftyp = new boxes.FileTypeBox("ftyp");
+				FileTypeBox ftyp = new FileTypeBox("ftyp");
 				ftyp.struct_depth=0;
 				ftyp.start_position=stream_position;
 				ftyp.end_position=stream_position+size;
@@ -54,7 +65,7 @@ public class Main {
 				box_count++;
 				depth = 0;
 			} else if (type.equals("moov")) {
-				boxes.MovieBox moov = new boxes.MovieBox("moov");
+				MovieBox moov = new MovieBox("moov");
 				moov.struct_depth=0;
 				moov.size = size;
 				System.out.println(moov);
@@ -65,13 +76,45 @@ public class Main {
 				moov.start_position=stream_position;
 				moov.end_position=stream_position+size;
 				stream_position+=8;
-			} else if (type.equals("mvhd")) {
+			}else if (type.equals("mvex")) {
+				MovieExtendsBox mvex = new MovieExtendsBox("mvex");
+				mvex.struct_depth=1;
+				mvex.size = size;
+				System.out.println(mvex);
+				boxes.add(mvex);
+				box_count++;
+				mdat_position_flag=1;
+				fragment_flag=1;
+				mvex.start_position=stream_position;
+				mvex.end_position=stream_position+size;
+				stream_position+=8;
+			}else if (type.equals("mehd")) {
+				byte[] version = new byte[1];
+				fis.read(version);
+				long v = Util.ByteArrayToLong(version);
+				
+				byte[] flags = new byte[3];
+				fis.read(flags);
+				long f = Util.ByteArrayToLong(flags);
+				
+				
+				MovieExtendsHeaderBox mehd = new MovieExtendsHeaderBox("mehd", v, f);
+				mehd.struct_depth=1;
+				mehd.size = size;
+				mehd.SetMEHDBox(fis);
+				System.out.println(mehd);
+				full_boxes.add(mehd);
+				full_box_count++;
+				mehd.start_position=stream_position;
+				mehd.end_position=stream_position+size;
+				stream_position+=8;
+			}  else if (type.equals("mvhd")) {
 				byte[] version = new byte[1];
 				fis.read(version);
 				long v = Util.ByteArrayToLong(version);
 				// flag 3바이트
 				fis.skip(3);
-				boxes.MovieHeaderBox mvhd = new boxes.MovieHeaderBox("mvhd", v, 0);
+				MovieHeaderBox mvhd = new MovieHeaderBox("mvhd", v, 0);
 				mvhd.struct_depth=1;
 				mvhd.size = size;
 				mvhd.SetMVHDBox(fis, cal);
@@ -83,7 +126,7 @@ public class Main {
 				mvhd.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("free")) {
-				boxes.FreeSpaceBox free = new boxes.FreeSpaceBox("free");
+				FreeSpaceBox free = new FreeSpaceBox("free");
 				if(box_count>0) {
 					if(full_box_count>0) {
 						if(boxes.get(box_count-1).end_position>full_boxes.get(full_box_count-1).end_position) {
@@ -124,7 +167,7 @@ public class Main {
 				free.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("skip")) {
-				boxes.FreeSpaceBox skip = new boxes.FreeSpaceBox("skip");
+				FreeSpaceBox skip = new FreeSpaceBox("skip");
 				
 				if(box_count>0) {
 					if(full_box_count>0) {
@@ -165,7 +208,7 @@ public class Main {
 				skip.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("trak")) {
-				boxes.TrackBox trak = new boxes.TrackBox("trak");
+				TrackBox trak = new TrackBox("trak");
 				trak.size = size;
 				System.out.println(trak);
 
@@ -176,14 +219,52 @@ public class Main {
 				trak.start_position=stream_position;
 				trak.end_position=stream_position+size;
 				stream_position+=8;
-			} else if (type.equals("tkhd")) {
+			}else if (type.equals("edts")) {
+				EditBox edts = new EditBox("edts");
+				edts.size = size;
+				System.out.println(edts);
+
+				boxes.add(edts);
+				box_count++;
+
+				edts.struct_depth= 1;
+				edts.start_position=stream_position;
+				edts.end_position=stream_position+size;
+				stream_position+=8;
+			} else if (type.equals("elst")) {
+				byte[] version = new byte[1];
+				fis.read(version);
+				long v = Util.ByteArrayToLong(version);
+				
+				byte[] flags = new byte[3];
+				fis.read(flags);
+				long f = Util.ByteArrayToLong(flags);
+
+				EditListBox elst = new EditListBox("elst", v, f);
+				elst.size = size;
+
+				elst.SetELSTBox(fis);
+
+				full_boxes.add(elst);
+				full_box_count++;
+				
+				System.out.println(elst);
+
+				if (elst.entry_count != 0) {
+					elst.SetELSTBox_Table(fis);
+					elst.ELSTBox_Table_Print();
+				}
+				elst.start_position=stream_position;
+				elst.end_position=stream_position+size;
+				stream_position+=size;
+			}else if (type.equals("tkhd")) {
 				byte[] version = new byte[1];
 				fis.read(version);
 				long v = Util.ByteArrayToLong(version);
 				byte[] flags = new byte[3];
 				fis.read(flags);
 				long f = Util.ByteArrayToLong(flags);
-				boxes.TrackHeaderBox tkhd = new boxes.TrackHeaderBox("tkhd", v, f);
+				TrackHeaderBox tkhd = new TrackHeaderBox("tkhd", v, f);
 				tkhd.size = size;
 				tkhd.SetTKHDBox(fis, cal);
 				System.out.println(tkhd);
@@ -194,7 +275,7 @@ public class Main {
 				tkhd.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("mdia")) {
-				boxes.MediaBox mdia = new boxes.MediaBox("mdia");
+				MediaBox mdia = new MediaBox("mdia");
 				mdia.size = size;
 				System.out.println(mdia);
 				boxes.add(mdia);
@@ -205,7 +286,7 @@ public class Main {
 				stream_position+=8;
 			} else if (type.equals("udta")) {
 				
-				boxes.UserDataBox udta = new boxes.UserDataBox("udta");
+				UserDataBox udta = new UserDataBox("udta");
 				udta.size = size;
 				
 				for(int i=box_count-1;i>=0;i--) {
@@ -236,7 +317,7 @@ public class Main {
 				long v = Util.ByteArrayToLong(version);
 				// flags set to 0
 				fis.skip(3);
-				boxes.MediaHeaderBox mdhd = new boxes.MediaHeaderBox("mdhd", v, 0);
+				MediaHeaderBox mdhd = new MediaHeaderBox("mdhd", v, 0);
 				mdhd.size = size;
 				mdhd.SetMDHDBox(fis, cal);
 				System.out.println(mdhd);
@@ -252,7 +333,7 @@ public class Main {
 				long v = Util.ByteArrayToLong(version);
 				// Flags
 				fis.skip(3);
-				boxes.HandlerReferenceBox hdlr = new boxes.HandlerReferenceBox("hdlr", v, 0);
+				HandlerReferenceBox hdlr = new HandlerReferenceBox("hdlr", v, 0);
 				
 				for(int i=full_box_count-1;i>=0;i--) {
 					if(full_boxes.get(i).type.equals("meta")) {
@@ -291,7 +372,7 @@ public class Main {
 				hdlr.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("minf")) {
-				boxes.MediaInformationBox minf = new boxes.MediaInformationBox("minf");
+				MediaInformationBox minf = new MediaInformationBox("minf");
 				minf.size = size;
 				System.out.println(minf);
 				boxes.add(minf);
@@ -318,7 +399,7 @@ public class Main {
 				stream_position+=size;
 			} else if (type.equals("dinf")) {
 				depth++;
-				boxes.DataInformationBox dinf = new boxes.DataInformationBox("dinf");
+				DataInformationBox dinf = new DataInformationBox("dinf");
 				dinf.size = size;
 
 				boxes.add(dinf);
@@ -365,7 +446,7 @@ public class Main {
 				fis.read(flags);
 				long f = Util.ByteArrayToLong(flags);
 
-				boxes.DataReferenceBox dref = new boxes.DataReferenceBox("dref", v, f);
+				DataReferenceBox dref = new DataReferenceBox("dref", v, f);
 				dref.size = size;
 
 				dref.SetDREFBox(fis);
@@ -398,7 +479,7 @@ public class Main {
 				dref.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("stbl")) {
-				boxes.SampleTableBox stbl = new boxes.SampleTableBox("stbl");
+				SampleTableBox stbl = new SampleTableBox("stbl");
 				stbl.size = size;
 				System.out.println(stbl);
 
@@ -411,7 +492,7 @@ public class Main {
 				stbl.end_position=stream_position+size;
 				stream_position+=8;
 			} else if (type.equals("stsd")) {
-				boxes.SampleDescriptionBox stsd = new boxes.SampleDescriptionBox("stsd", 0, 0);
+				SampleDescriptionBox stsd = new SampleDescriptionBox("stsd", 0, 0);
 				stsd.size = size;
 				// version 1 byte flags 3 bytes
 				fis.skip(4);
@@ -427,24 +508,29 @@ public class Main {
 				stsd.end_position=stream_position+size;
 				stream_position+=size;
 			} else if(type.equals("avc1")){
-				boxes.AVC1Box avc1=new boxes.AVC1Box();
+				AVC1Box avc1=new AVC1Box("avc1",0,0);
 				avc1.sample_description_size=size;
 				avc1.data_format=type;
 				avc1.SetAVC1Box(fis);
 				System.out.println(avc1);
+				full_boxes.add(avc1);
+				full_box_count++;
+				
 			}else if(type.equals("avcC")){
 				//ISO/IEC 14496-15 18페이지
-				boxes.AVCCBox avcc=new boxes.AVCCBox();
+				AVCCBox avcc=new AVCCBox();
 				avcc.size=size;
 				avcc.type=type;
 				avcc.SetAVCCBox(fis);
 				System.out.println(avcc);
+				avcc.FMP4Skip(full_boxes, full_box_count, fis);
 			}else if(type.equals("mp4a")){
-				boxes.MP4ABox mp4a=new boxes.MP4ABox();
+				MP4ABox mp4a=new MP4ABox();
 				mp4a.sample_description_size=size;
 				mp4a.data_format=type;
 				mp4a.SetMP4ABox(fis);
 				System.out.println(mp4a);
+				
 			}else if (type.equals("stts")) {
 
 				byte[] version = new byte[1];
@@ -455,7 +541,7 @@ public class Main {
 				fis.read(flags);
 				long f = Util.ByteArrayToLong(flags);
 
-				boxes.TimetoSampleBox stts = new boxes.TimetoSampleBox("stts", v, f);
+				TimetoSampleBox stts = new TimetoSampleBox("stts", v, f);
 				stts.size = size;
 
 				stts.SetSTTSBox(fis);
@@ -472,7 +558,79 @@ public class Main {
 				stts.start_position=stream_position;
 				stts.end_position=stream_position+size;
 				stream_position+=size;
-			} else if (type.equals("stss")) {
+			} else if (type.equals("ctts")) {
+				byte[] version = new byte[1];
+				fis.read(version);
+				long v = Util.ByteArrayToLong(version);
+				
+				byte[] flags = new byte[3];
+				fis.read(flags);
+				long f = Util.ByteArrayToLong(flags);
+
+				CompositionOffsetBox ctts = new CompositionOffsetBox("ctts", v, f);
+				ctts.size = size;
+
+				ctts.SetCTTSBox(fis);
+
+				full_boxes.add(ctts);
+				full_box_count++;
+				
+				System.out.println(ctts);
+
+				if (ctts.entry_count != 0) {
+					ctts.SetCTTSBox_Table(fis);
+					ctts.CTTSBox_Table_Print();
+				}
+				ctts.start_position=stream_position;
+				ctts.end_position=stream_position+size;
+				stream_position+=size;
+			} else if (type.equals("sbgp")) {
+				byte[] version = new byte[1];
+				fis.read(version);
+				long v = Util.ByteArrayToLong(version);
+				
+				byte[] flags = new byte[3];
+				fis.read(flags);
+				long f = Util.ByteArrayToLong(flags);
+
+				SampletoGroupBox sbgp = new SampletoGroupBox("sbgp", v, f);
+				sbgp.size = size;
+
+				sbgp.SetSBGPBox(fis);
+
+				full_boxes.add(sbgp);
+				full_box_count++;
+				
+				for(int i=box_count-1;i>=0;i--) {
+					if(boxes.get(i).type.equals("stbl")) {
+						if(boxes.get(i).end_position>stream_position) {
+							sbgp.struct_depth=5;
+							break;
+						}
+					}else if(boxes.get(i).type.equals("traf")) {
+						if(boxes.get(i).end_position>stream_position) {
+							sbgp.struct_depth=2;
+							break;
+						}
+					}
+				}
+				
+				for (int i = 0; i < sbgp.struct_depth; i++) {
+					tab.append("\t");
+				}
+
+				System.out.println(sbgp.toString(tab.toString()));
+
+				if (sbgp.entry_count != 0) {
+					sbgp.SetSBGPBox_Table(fis);
+					sbgp.SBGPBox_Table_Print(tab.toString());
+				}
+
+				tab.delete(0, tab.length());
+				sbgp.start_position=stream_position;
+				sbgp.end_position=stream_position+size;
+				stream_position+=size;
+			}else if (type.equals("stss")) {
 
 				byte[] version = new byte[1];
 				fis.read(version);
@@ -482,7 +640,7 @@ public class Main {
 				fis.read(flags);
 				long f = Util.ByteArrayToLong(flags);
 
-				boxes.SyncSampleBox stss = new boxes.SyncSampleBox("stss", v, f);
+				SyncSampleBox stss = new SyncSampleBox("stss", v, f);
 				stss.size = size;
 
 				stss.SetSTSSBox(fis);
@@ -509,7 +667,7 @@ public class Main {
 				fis.read(flags);
 				long f = Util.ByteArrayToLong(flags);
 
-				boxes.SampletoChunkBox stsc = new boxes.SampletoChunkBox("stsc", v, f);
+				SampletoChunkBox stsc = new SampletoChunkBox("stsc", v, f);
 				stsc.size = size;
 
 				stsc.SetSTSCBox(fis);
@@ -537,7 +695,7 @@ public class Main {
 				fis.read(flags);
 				long f = Util.ByteArrayToLong(flags);
 
-				boxes.SampleSizeBox stsz = new boxes.SampleSizeBox("stsz", v, f);
+				SampleSizeBox stsz = new SampleSizeBox("stsz", v, f);
 				stsz.size = size;
 
 				stsz.SetSTSZBox(fis);
@@ -565,7 +723,7 @@ public class Main {
 				fis.read(flags);
 				long f = Util.ByteArrayToLong(flags);
 
-				boxes.SoundMediaHeaderBox smhd = new boxes.SoundMediaHeaderBox("smhd", v, f);
+				SoundMediaHeaderBox smhd = new SoundMediaHeaderBox("smhd", v, f);
 
 				smhd.size = size;
 
@@ -589,7 +747,7 @@ public class Main {
 				fis.read(flags);
 				long f = Util.ByteArrayToLong(flags);
 
-				boxes.ChunkOffsetBox stco = new boxes.ChunkOffsetBox("stco", v, f);
+				ChunkOffsetBox stco = new ChunkOffsetBox("stco", v, f);
 				stco.size = size;
 
 				stco.SetSTCOBox(fis);
@@ -607,8 +765,8 @@ public class Main {
 				stco.start_position=stream_position;
 				stco.end_position=stream_position+size;
 				stream_position+=size;
-			} else if (type.equals("mdat")&&(fragment_flag==0)&&(mdat_position_flag==1)) {
-				boxes.MediaDataBox mdat = new boxes.MediaDataBox("mdat");
+			} else if (type.equals("mdat")&&(fragment_flag==0)&&(mdat_position_flag==1)) { //일반 mp4에 mdat이 moov 뒤에 오는 경우
+				MediaDataBox mdat = new MediaDataBox("mdat");
 				mdat.size = size;
 				fis.skip(size-8);
 				if (size == 1) {
@@ -616,29 +774,13 @@ public class Main {
 					fis.read(largesize);
 					mdat.largesize = Util.ByteArrayToLong(largesize);
 				}
-				int sample_index = -1;
-				int stsc_index = 0;
-				int chunk_index = 0;
-				int sample_count = 0;
-				int stts_index = 0;
-				int stts_count = 0;
-				int sample_duration = 0;
-				long sample_offset = 0;
-				int video_sample_count = 0;
-				int stss_index = 0;
-				int audio_sample_count = 0;
-				int keyframe_index = 0;
-
-				if (size == 1) {
-					System.out.println("mdat\n" + "Size: " + mdat.largesize + "\n" + "Type: MediaDataBox\n");
-				} else {
-					System.out.println("mdat\n" + "Size: " + mdat.size + "\n" + "Type: MediaDataBox\n");
-				}
-				boxes.SampletoChunkBox stsc = null;
-				boxes.SampleSizeBox stsz = null;
-				boxes.ChunkOffsetBox stco = null;
-				boxes.TimetoSampleBox stts = null;
-				boxes.SyncSampleBox stss = null;
+				System.out.println(mdat);
+				
+				SampletoChunkBox stsc = null;
+				SampleSizeBox stsz = null;
+				ChunkOffsetBox stco = null;
+				TimetoSampleBox stts = null;
+				SyncSampleBox stss = null;
 				for (int i = 0; i < full_box_count; i++) {
 					if (full_boxes.get(i).type.equals("vmhd")) { // video
 						if(sample_index==-1) {
@@ -674,7 +816,7 @@ public class Main {
 									stsc_index++;
 								}
 							}
-							InputStream sample_stream = new FileInputStream("output.mp4");
+							InputStream sample_stream = new FileInputStream("video_960_30.mp4");
 							sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 							sample_offset = stco.chunk_offset_table.get(chunk_index);
 
@@ -684,7 +826,7 @@ public class Main {
 											.get(stts_index + 1).sample_duration;
 									stts_index++;
 								}
-								boxes.MediaData sample = new boxes.MediaData();
+								MediaData sample = new MediaData();
 								sample.chunk_number = chunk_index + 1;
 								sample.duration = sample_duration;
 								if(k>0) {
@@ -756,7 +898,7 @@ public class Main {
 									stsc_index++;
 								}
 							}
-							InputStream sample_stream = new FileInputStream("output.mp4");
+							InputStream sample_stream = new FileInputStream("video_960_30.mp4");
 							sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 							sample_offset = stco.chunk_offset_table.get(chunk_index);
 
@@ -766,7 +908,7 @@ public class Main {
 											.get(stts_index + 1).sample_duration;
 									stts_index++;
 								}
-								boxes.MediaData sample = new boxes.MediaData();
+								MediaData sample = new MediaData();
 								sample.chunk_number = chunk_index + 1;
 								sample.duration = sample_duration;
 								if(k>0) {
@@ -807,8 +949,8 @@ public class Main {
 				boxes.add(mdat);
 				box_count++;
 				depth = 0;
-			}else if (type.equals("mdat")&&(fragment_flag==1)&&(mdat_position_flag==1)) {
-				boxes.MediaDataBox mdat = new boxes.MediaDataBox("mdat");
+			}else if (type.equals("mdat")&&(fragment_flag==1)&&(mdat_position_flag==1)) { //fmp4 이며 mdat이 제일 뒤에 오는 경우
+				MediaDataBox mdat = new MediaDataBox("mdat");
 				mdat.size =size;
 				fis.skip(size-8);
 				if (size == 1) {
@@ -816,29 +958,17 @@ public class Main {
 					fis.read(largesize);
 					mdat.largesize = Util.ByteArrayToLong(largesize);
 				}
-				int sample_index = -1;
-				int stsc_index = 0;
-				int chunk_index = 0;
-				int sample_count = 0;
-				int stts_index = 0;
-				int stts_count = 0;
-				int sample_duration = 0;
-				long sample_offset = 0;
-				int video_sample_count = 0;
-				int stss_index = 0;
-				int audio_sample_count = 0;
-				int keyframe_index = 0;
 
 				if (size == 1) {
 					System.out.println("mdat\n" + "Size: " + mdat.largesize + "\n" + "Type: MediaDataBox\n");
 				} else {
 					System.out.println("mdat\n" + "Size: " + mdat.size + "\n" + "Type: MediaDataBox\n");
 				}
-				boxes.SampletoChunkBox stsc = null;
-				boxes.SampleSizeBox stsz = null;
-				boxes.ChunkOffsetBox stco = null;
-				boxes.TimetoSampleBox stts = null;
-				boxes.SyncSampleBox stss = null;
+				SampletoChunkBox stsc = null;
+				SampleSizeBox stsz = null;
+				ChunkOffsetBox stco = null;
+				TimetoSampleBox stts = null;
+				SyncSampleBox stss = null;
 				for (int i = 0; i < full_box_count; i++) {
 					if (full_boxes.get(i).type.equals("vmhd")) { // video
 						if(sample_index==-1) {
@@ -874,7 +1004,7 @@ public class Main {
 									stsc_index++;
 								}
 							}
-							InputStream sample_stream = new FileInputStream("output.mp4");
+							InputStream sample_stream = new FileInputStream("video_960_30.mp4");
 							sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 							sample_offset = stco.chunk_offset_table.get(chunk_index);
 
@@ -884,7 +1014,7 @@ public class Main {
 											.get(stts_index + 1).sample_duration;
 									stts_index++;
 								}
-								boxes.MediaData sample = new boxes.MediaData();
+								MediaData sample = new MediaData();
 								sample.chunk_number = chunk_index + 1;
 								sample.duration = sample_duration;
 								if(k>0) {
@@ -956,7 +1086,7 @@ public class Main {
 									stsc_index++;
 								}
 							}
-							InputStream sample_stream = new FileInputStream("output.mp4");
+							InputStream sample_stream = new FileInputStream("video_960_30.mp4");
 							sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 							sample_offset = stco.chunk_offset_table.get(chunk_index);
 
@@ -966,7 +1096,7 @@ public class Main {
 											.get(stts_index + 1).sample_duration;
 									stts_index++;
 								}
-								boxes.MediaData sample = new boxes.MediaData();
+								MediaData sample = new MediaData();
 								sample.chunk_number = chunk_index + 1;
 								sample.duration = sample_duration;
 								if(k>0) {
@@ -1024,37 +1154,25 @@ public class Main {
 			}
 		}
 		
-		if(ismdatafter==1) {//mdat 나중에 까기
-			boxes.MediaDataBox mdat = new boxes.MediaDataBox("mdat");
+		if((ismdatafter==1)&&(fragment_flag==0)) {//mdat 나중에 까기
+			MediaDataBox mdat = new MediaDataBox("mdat");
 			mdat.size = mdat_size;
 			if (mdat_size == 1) {
 				byte[] largesize = new byte[8];
 				fis.read(largesize);
 				mdat.largesize = Util.ByteArrayToLong(largesize);
 			}
-			int sample_index = -1;
-			int stsc_index = 0;
-			int chunk_index = 0;
-			int sample_count = 0;
-			int stts_index = 0;
-			int stts_count = 0;
-			int sample_duration = 0;
-			long sample_offset = 0;
-			int video_sample_count = 0;
-			int stss_index = 0;
-			int audio_sample_count = 0;
-			int keyframe_index = 0;
 
 			if (mdat_size == 1) {
 				System.out.println("mdat\n" + "Size: " + mdat.largesize + "\n" + "Type: MediaDataBox\n");
 			} else {
 				System.out.println("mdat\n" + "Size: " + mdat.size + "\n" + "Type: MediaDataBox\n");
 			}
-			boxes.SampletoChunkBox stsc = null;
-			boxes.SampleSizeBox stsz = null;
-			boxes.ChunkOffsetBox stco = null;
-			boxes.TimetoSampleBox stts = null;
-			boxes.SyncSampleBox stss = null;
+			SampletoChunkBox stsc = null;
+			SampleSizeBox stsz = null;
+			ChunkOffsetBox stco = null;
+			TimetoSampleBox stts = null;
+			SyncSampleBox stss = null;
 			for (int i = 0; i < full_box_count; i++) {
 				if (full_boxes.get(i).type.equals("vmhd")) { // video
 					if(sample_index==-1) {
@@ -1090,7 +1208,7 @@ public class Main {
 								stsc_index++;
 							}
 						}
-						InputStream sample_stream = new FileInputStream("output.mp4");
+						InputStream sample_stream = new FileInputStream("video_960_30.mp4");
 						sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 						sample_offset = stco.chunk_offset_table.get(chunk_index);
 
@@ -1100,7 +1218,7 @@ public class Main {
 										.get(stts_index + 1).sample_duration;
 								stts_index++;
 							}
-							boxes.MediaData sample = new boxes.MediaData();
+							MediaData sample = new MediaData();
 							sample.chunk_number = chunk_index + 1;
 							sample.duration = sample_duration;
 							if(k>0) {
@@ -1172,7 +1290,7 @@ public class Main {
 								stsc_index++;
 							}
 						}
-						InputStream sample_stream = new FileInputStream("output.mp4");
+						InputStream sample_stream = new FileInputStream("video_960_30.mp4");
 						sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 						sample_offset = stco.chunk_offset_table.get(chunk_index);
 
@@ -1182,7 +1300,7 @@ public class Main {
 										.get(stts_index + 1).sample_duration;
 								stts_index++;
 							}
-							boxes.MediaData sample = new boxes.MediaData();
+							MediaData sample = new MediaData();
 							sample.chunk_number = chunk_index + 1;
 							sample.duration = sample_duration;
 							if(k>0) {

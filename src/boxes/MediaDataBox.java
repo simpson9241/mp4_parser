@@ -73,5 +73,15 @@ public class MediaDataBox extends Box{
 					"\tData: "+this.datas.get(k).data);
 		}
 	}
+	@Override
+	public String toString() {
+		if(this.size==1) {
+			return "mdat\n" + "Size: " + this.largesize + "\n" + "Type: MediaDataBox\n";
+		}else {
+			return "mdat\n" + "Size: " + this.size + "\n" + "Type: MediaDataBox\n";
+		}
+	}
+	
+	
 
 }

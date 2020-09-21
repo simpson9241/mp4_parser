@@ -1,5 +1,7 @@
 package boxes;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
@@ -43,11 +45,9 @@ public class AVCCBox {
 		byte[] lengthSizeMinusOne= new byte[1];
 		fis.read(lengthSizeMinusOne);
 		this.lengthSizeMinusOne = (int)(Util.ByteArrayToLong(lengthSizeMinusOne)&0x00000011);
-		
 		byte[] numOfSequenceParameterSets= new byte[1];
 		fis.read(numOfSequenceParameterSets);
 		this.numOfSequenceParameterSets = (int)(Util.ByteArrayToLong(numOfSequenceParameterSets)&0x00011111);
-	
 		for(int i=0;i<this.numOfSequenceParameterSets;i++) {
 			SequenceParameterSet sequenceparameterset=new SequenceParameterSet();
 			byte[] sequenceParameterSetLength= new byte[2];
@@ -67,6 +67,17 @@ public class AVCCBox {
 			pictureparameterset.pictureParameterSetLength=(int)Util.ByteArrayToLong(pictureParameterSetLength);
 			this.pictureParameterSets.add(pictureparameterset);
 			fis.skip(this.pictureParameterSets.get(i).pictureParameterSetLength);
+		}
+	}
+	
+	public void FMP4Skip(ArrayList<FullBox> full_boxes,int full_box_count,FileInputStream fis) throws IOException {
+		for(int i=full_box_count-1;i>=0;i--) {
+			if(full_boxes.get(i).type.equals("stsd")) {
+				if(full_boxes.get(i).end_position>fis.getChannel().position()) {
+
+					fis.skip(full_boxes.get(i).end_position-fis.getChannel().position());
+				}
+			}
 		}
 	}
 	
