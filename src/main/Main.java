@@ -3,13 +3,11 @@ package main;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.TimeZone;
+import org.apache.commons.io.input.*;
 
-import boxes.PictureParameterSet;
-import boxes.SampletoChunkBox;
-import boxes.SequenceParameterSet;
+import boxes.TrackBox;
 
 public class Main {
 	// stsd box 하위 구조 구현해야됨
@@ -37,6 +35,8 @@ public class Main {
 		String type;
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeZone(TimeZone.getTimeZone("GMT"));
+		long mdat_size=0;
+		long mdat_largesize=0;
 		while (fis.read(size_byte) != -1) {
 			fis.read(type_byte);
 			size = Util.ByteArrayToLong(size_byte);
@@ -64,7 +64,7 @@ public class Main {
 				mdat_position_flag=1;
 				moov.start_position=stream_position;
 				moov.end_position=stream_position+size;
-				stream_position+=size;
+				stream_position+=8;
 			} else if (type.equals("mvhd")) {
 				byte[] version = new byte[1];
 				fis.read(version);
@@ -84,12 +84,36 @@ public class Main {
 				stream_position+=size;
 			} else if (type.equals("free")) {
 				boxes.FreeSpaceBox free = new boxes.FreeSpaceBox("free");
-//				
-//				for(int i=)
-//				
+				if(box_count>0) {
+					if(full_box_count>0) {
+						if(boxes.get(box_count-1).end_position>full_boxes.get(full_box_count-1).end_position) {
+							if(full_boxes.get(full_box_count-1).end_position>stream_position) {
+								free.struct_depth=full_boxes.get(full_box_count-1).struct_depth+1;
+							}else {
+								free.struct_depth=full_boxes.get(full_box_count-1).struct_depth;
+							}
+						}else {
+							if(boxes.get(box_count-1).end_position>stream_position) {
+								free.struct_depth=boxes.get(box_count-1).struct_depth+1;
+							}else {
+								free.struct_depth=boxes.get(box_count-1).struct_depth;
+							}
+						}
+					}else {
+						if(boxes.get(box_count-1).end_position>stream_position) {
+							free.struct_depth=boxes.get(box_count-1).struct_depth+1;
+						}else {
+							free.struct_depth=boxes.get(box_count-1).struct_depth;
+						}
+					}
+				}else {
+					free.struct_depth=0;
+				}
+				
+				
 				free.size = size;
 				fis.skip(free.size - 8);
-				for (int i = 0; i < depth; i++) {
+				for (int i = 0; i < free.struct_depth; i++) {
 					tab.append("\t");
 				}
 				System.out.println(free.toString(tab.toString()));
@@ -101,9 +125,36 @@ public class Main {
 				stream_position+=size;
 			} else if (type.equals("skip")) {
 				boxes.FreeSpaceBox skip = new boxes.FreeSpaceBox("skip");
+				
+				if(box_count>0) {
+					if(full_box_count>0) {
+						if(boxes.get(box_count-1).end_position>full_boxes.get(full_box_count-1).end_position) {
+							if(full_boxes.get(full_box_count-1).end_position>stream_position) {
+								skip.struct_depth=full_boxes.get(full_box_count-1).struct_depth+1;
+							}else {
+								skip.struct_depth=full_boxes.get(full_box_count-1).struct_depth;
+							}
+						}else {
+							if(boxes.get(box_count-1).end_position>stream_position) {
+								skip.struct_depth=boxes.get(box_count-1).struct_depth+1;
+							}else {
+								skip.struct_depth=boxes.get(box_count-1).struct_depth;
+							}
+						}
+					}else {
+						if(boxes.get(box_count-1).end_position>stream_position) {
+							skip.struct_depth=boxes.get(box_count-1).struct_depth+1;
+						}else {
+							skip.struct_depth=boxes.get(box_count-1).struct_depth;
+						}
+					}
+				}else {
+					skip.struct_depth=0;
+				}
+				
 				skip.size = size;
 				fis.skip(skip.size - 8);
-				for (int i = 0; i < depth; i++) {
+				for (int i = 0; i < skip.struct_depth; i++) {
 					tab.append("\t");
 				}
 				System.out.println(skip.toString(tab.toString()));
@@ -121,10 +172,10 @@ public class Main {
 				boxes.add(trak);
 				box_count++;
 
-				depth = 1;
+				trak.struct_depth= 1;
 				trak.start_position=stream_position;
 				trak.end_position=stream_position+size;
-				stream_position+=size;
+				stream_position+=8;
 			} else if (type.equals("tkhd")) {
 				byte[] version = new byte[1];
 				fis.read(version);
@@ -138,7 +189,7 @@ public class Main {
 				System.out.println(tkhd);
 				full_boxes.add(tkhd);
 				full_box_count++;
-				depth = 2;
+				tkhd.struct_depth = 2;
 				tkhd.start_position=stream_position;
 				tkhd.end_position=stream_position+size;
 				stream_position+=size;
@@ -148,15 +199,27 @@ public class Main {
 				System.out.println(mdia);
 				boxes.add(mdia);
 				box_count++;
-				depth = 2;
+				mdia.struct_depth = 2;
 				mdia.start_position=stream_position;
 				mdia.end_position=stream_position+size;
-				stream_position+=size;
+				stream_position+=8;
 			} else if (type.equals("udta")) {
 				
 				boxes.UserDataBox udta = new boxes.UserDataBox("udta");
 				udta.size = size;
-				for (int i = 0; i < depth; i++) {
+				
+				for(int i=box_count-1;i>=0;i--) {
+					if(boxes.get(i).type.equals("trak")) {
+						if(boxes.get(i).end_position>stream_position) {
+							udta.struct_depth=boxes.get(i).struct_depth+1;
+							break;
+						}else{
+							udta.struct_depth=1;
+							break;
+						}
+					}
+				}
+				for (int i = 0; i < udta.struct_depth; i++) {
 					tab.append("\t");
 				}
 				System.out.println(udta.toString(tab.toString()));
@@ -165,7 +228,7 @@ public class Main {
 				box_count++;
 				udta.start_position=stream_position;
 				udta.end_position=stream_position+size;
-				stream_position+=size;
+				stream_position+=8;
 				
 			} else if (type.equals("mdhd")) {
 				byte[] version = new byte[1];
@@ -190,9 +253,33 @@ public class Main {
 				// Flags
 				fis.skip(3);
 				boxes.HandlerReferenceBox hdlr = new boxes.HandlerReferenceBox("hdlr", v, 0);
+				
+				for(int i=full_box_count-1;i>=0;i--) {
+					if(full_boxes.get(i).type.equals("meta")) {
+						if(full_boxes.get(i).end_position>stream_position) {
+							hdlr.struct_depth=full_boxes.get(i).struct_depth+1;
+							break;
+						}
+					}
+				}
+				
+				for(int i=box_count-1;i>=0;i--) {
+					if(boxes.get(i).type.equals("mdia")) {
+						if(boxes.get(i).end_position>stream_position) {
+							hdlr.struct_depth=3;
+							break;
+						}
+					}else if(boxes.get(i).type.equals("minf")){
+						if(boxes.get(i).end_position>stream_position) {
+							hdlr.struct_depth=4;
+							break;
+						}
+					}
+				}
+				
 				hdlr.size = size;
 				hdlr.SetHDLRBox(fis);
-				for (int i = 0; i < depth; i++) {
+				for (int i = 0; i < hdlr.struct_depth; i++) {
 					tab.append("\t");
 				}
 				System.out.println(hdlr.toString(tab.toString()));
@@ -212,7 +299,7 @@ public class Main {
 				depth = 3;
 				minf.start_position=stream_position;
 				minf.end_position=stream_position+size;
-				stream_position+=size;
+				stream_position+=8;
 			} else if (type.equals("vmhd")) {
 				byte[] version = new byte[1];
 				fis.read(version);
@@ -236,14 +323,35 @@ public class Main {
 
 				boxes.add(dinf);
 				box_count++;
-				for (int i = 0; i < depth; i++) {
+				
+				for(int i=full_box_count-1;i>=0;i--) {
+					if(full_boxes.get(i).type.equals("meta")) {
+						if(full_boxes.get(i).end_position>stream_position) {
+							dinf.struct_depth=full_boxes.get(i).struct_depth+1;
+							break;
+						}
+					}
+				}
+				
+				for(int i=box_count-1;i>=0;i--) {
+					if(boxes.get(i).type.equals("minf")) {
+						if(boxes.get(i).end_position>stream_position) {
+							dinf.struct_depth=4;
+							break;
+						}
+					}
+				}
+				
+				
+				
+				for (int i = 0; i < dinf.struct_depth; i++) {
 					tab.append("\t");
 				}
 				System.out.println(dinf.toString(tab.toString()));
 				tab.delete(0, tab.length());
 				dinf.start_position=stream_position;
 				dinf.end_position=stream_position+size;
-				stream_position+=size;
+				stream_position+=8;
 			} else if (type.equals("dref")) {
 				
 				
@@ -264,8 +372,17 @@ public class Main {
 
 				full_boxes.add(dref);
 				full_box_count++;
-
-				for (int i = 0; i < depth; i++) {
+				
+				for(int i=box_count-1;i>=0;i--) {
+					if(boxes.get(i).type.equals("dinf")) {
+						if(boxes.get(i).end_position>stream_position) {
+							dref.struct_depth=boxes.get(i).struct_depth+1;
+							break;
+						}
+					}
+				}
+				
+				for (int i = 0; i < dref.struct_depth; i++) {
 					tab.append("\t");
 				}
 
@@ -292,7 +409,7 @@ public class Main {
 				
 				stbl.start_position=stream_position;
 				stbl.end_position=stream_position+size;
-				stream_position+=size;
+				stream_position+=8;
 			} else if (type.equals("stsd")) {
 				boxes.SampleDescriptionBox stsd = new boxes.SampleDescriptionBox("stsd", 0, 0);
 				stsd.size = size;
@@ -315,9 +432,6 @@ public class Main {
 				avc1.data_format=type;
 				avc1.SetAVC1Box(fis);
 				System.out.println(avc1);
-				avc1.start_position=stream_position;
-				avc1.end_position=stream_position+size;
-				stream_position+=size;
 			}else if(type.equals("avcC")){
 				//ISO/IEC 14496-15 18페이지
 				boxes.AVCCBox avcc=new boxes.AVCCBox();
@@ -325,18 +439,12 @@ public class Main {
 				avcc.type=type;
 				avcc.SetAVCCBox(fis);
 				System.out.println(avcc);
-				avcc.start_position=stream_position;
-				avcc.end_position=stream_position+size;
-				stream_position+=size;
 			}else if(type.equals("mp4a")){
 				boxes.MP4ABox mp4a=new boxes.MP4ABox();
 				mp4a.sample_description_size=size;
 				mp4a.data_format=type;
 				mp4a.SetMP4ABox(fis);
 				System.out.println(mp4a);
-				mp4a.start_position=stream_position;
-				mp4a.end_position=stream_position+size;
-				stream_position+=size;
 			}else if (type.equals("stts")) {
 
 				byte[] version = new byte[1];
@@ -502,13 +610,13 @@ public class Main {
 			} else if (type.equals("mdat")&&(fragment_flag==0)&&(mdat_position_flag==1)) {
 				boxes.MediaDataBox mdat = new boxes.MediaDataBox("mdat");
 				mdat.size = size;
-				fis.skip(size);
+				fis.skip(size-8);
 				if (size == 1) {
 					byte[] largesize = new byte[8];
 					fis.read(largesize);
 					mdat.largesize = Util.ByteArrayToLong(largesize);
 				}
-				int sample_index = 0;
+				int sample_index = -1;
 				int stsc_index = 0;
 				int chunk_index = 0;
 				int sample_count = 0;
@@ -533,7 +641,10 @@ public class Main {
 				boxes.SyncSampleBox stss = null;
 				for (int i = 0; i < full_box_count; i++) {
 					if (full_boxes.get(i).type.equals("vmhd")) { // video
-						sample_index = 0;
+						if(sample_index==-1) {
+
+							sample_index = 0;	
+						}
 						stsc_index = 0;
 						chunk_index = 0;
 						sample_count = 0;
@@ -563,7 +674,7 @@ public class Main {
 									stsc_index++;
 								}
 							}
-							InputStream sample_stream = new FileInputStream("BigBuckBunny.mp4");
+							InputStream sample_stream = new FileInputStream("output.mp4");
 							sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 							sample_offset = stco.chunk_offset_table.get(chunk_index);
 
@@ -576,9 +687,13 @@ public class Main {
 								boxes.MediaData sample = new boxes.MediaData();
 								sample.chunk_number = chunk_index + 1;
 								sample.duration = sample_duration;
-								sample.offset = sample_offset;
+								if(k>0) {
+									sample.offset = mdat.datas.get(sample_index-1).offset+mdat.datas.get(sample_index-1).size;
+								}else {
+									sample.offset = sample_offset;
+								}
 								sample.sample_index = sample_index + 1;
-								sample.size = stsz.sample_size_table.get(sample_index).longValue();
+								sample.size = stsz.sample_size_table.get(video_sample_count).longValue();
 								if (keyframe_index == -1) {
 									sample.iskeyframe = 1;
 								} else if ((sample.sample_index == keyframe_index)) {
@@ -596,8 +711,8 @@ public class Main {
 								video_sample_count++;
 								sample_index++;
 								stts_count++;
-								sample_stream.close();
 							}
+							sample_stream.close();
 						}
 						stsc = null;
 						stsz = null;
@@ -614,7 +729,11 @@ public class Main {
 						}
 					} else if (full_boxes.get(i).type.equals("smhd")) { // audio
 						System.out.println("\nAudio Sample");
-						sample_index = 0;
+						if(sample_index==-1) {
+
+							sample_index = 0;
+				
+						}
 						stsc_index = 0;
 						chunk_index = 0;
 						sample_count = 0;
@@ -637,7 +756,7 @@ public class Main {
 									stsc_index++;
 								}
 							}
-							InputStream sample_stream = new FileInputStream("BigBuckBunny.mp4");
+							InputStream sample_stream = new FileInputStream("output.mp4");
 							sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 							sample_offset = stco.chunk_offset_table.get(chunk_index);
 
@@ -650,9 +769,13 @@ public class Main {
 								boxes.MediaData sample = new boxes.MediaData();
 								sample.chunk_number = chunk_index + 1;
 								sample.duration = sample_duration;
-								sample.offset = sample_offset;
+								if(k>0) {
+									sample.offset = mdat.datas.get(sample_index-1).offset+mdat.datas.get(sample_index-1).size;
+								}else {
+									sample.offset = sample_offset;
+								}
 								sample.sample_index = sample_index + 1;
-								sample.size = stsz.sample_size_table.get(sample_index).longValue();
+								sample.size = stsz.sample_size_table.get(audio_sample_count).longValue();
 
 								byte[] data = new byte[(int) sample.size];
 								sample_stream.read(data);
@@ -684,19 +807,16 @@ public class Main {
 				boxes.add(mdat);
 				box_count++;
 				depth = 0;
-				mdat.start_position=stream_position;
-				mdat.end_position=stream_position+size;
-				stream_position+=size;
 			}else if (type.equals("mdat")&&(fragment_flag==1)&&(mdat_position_flag==1)) {
 				boxes.MediaDataBox mdat = new boxes.MediaDataBox("mdat");
-				mdat.size = size;
-				fis.skip(size);
+				mdat.size =size;
+				fis.skip(size-8);
 				if (size == 1) {
 					byte[] largesize = new byte[8];
 					fis.read(largesize);
 					mdat.largesize = Util.ByteArrayToLong(largesize);
 				}
-				int sample_index = 0;
+				int sample_index = -1;
 				int stsc_index = 0;
 				int chunk_index = 0;
 				int sample_count = 0;
@@ -721,7 +841,10 @@ public class Main {
 				boxes.SyncSampleBox stss = null;
 				for (int i = 0; i < full_box_count; i++) {
 					if (full_boxes.get(i).type.equals("vmhd")) { // video
-						sample_index = 0;
+						if(sample_index==-1) {
+
+							sample_index = 0;	
+						}
 						stsc_index = 0;
 						chunk_index = 0;
 						sample_count = 0;
@@ -751,7 +874,7 @@ public class Main {
 									stsc_index++;
 								}
 							}
-							InputStream sample_stream = new FileInputStream("BigBuckBunny.mp4");
+							InputStream sample_stream = new FileInputStream("output.mp4");
 							sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 							sample_offset = stco.chunk_offset_table.get(chunk_index);
 
@@ -764,9 +887,13 @@ public class Main {
 								boxes.MediaData sample = new boxes.MediaData();
 								sample.chunk_number = chunk_index + 1;
 								sample.duration = sample_duration;
-								sample.offset = sample_offset;
+								if(k>0) {
+									sample.offset = mdat.datas.get(sample_index-1).offset+mdat.datas.get(sample_index-1).size;
+								}else {
+									sample.offset = sample_offset;
+								}
 								sample.sample_index = sample_index + 1;
-								sample.size = stsz.sample_size_table.get(sample_index).longValue();
+								sample.size = stsz.sample_size_table.get(video_sample_count).longValue();
 								if (keyframe_index == -1) {
 									sample.iskeyframe = 1;
 								} else if ((sample.sample_index == keyframe_index)) {
@@ -784,8 +911,8 @@ public class Main {
 								video_sample_count++;
 								sample_index++;
 								stts_count++;
-								sample_stream.close();
 							}
+							sample_stream.close();
 						}
 						stsc = null;
 						stsz = null;
@@ -802,7 +929,11 @@ public class Main {
 						}
 					} else if (full_boxes.get(i).type.equals("smhd")) { // audio
 						System.out.println("\nAudio Sample");
-						sample_index = 0;
+						if(sample_index==-1) {
+
+							sample_index = 0;
+				
+						}
 						stsc_index = 0;
 						chunk_index = 0;
 						sample_count = 0;
@@ -825,7 +956,7 @@ public class Main {
 									stsc_index++;
 								}
 							}
-							InputStream sample_stream = new FileInputStream("BigBuckBunny.mp4");
+							InputStream sample_stream = new FileInputStream("output.mp4");
 							sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 							sample_offset = stco.chunk_offset_table.get(chunk_index);
 
@@ -838,9 +969,13 @@ public class Main {
 								boxes.MediaData sample = new boxes.MediaData();
 								sample.chunk_number = chunk_index + 1;
 								sample.duration = sample_duration;
-								sample.offset = sample_offset;
+								if(k>0) {
+									sample.offset = mdat.datas.get(sample_index-1).offset+mdat.datas.get(sample_index-1).size;
+								}else {
+									sample.offset = sample_offset;
+								}
 								sample.sample_index = sample_index + 1;
-								sample.size = stsz.sample_size_table.get(sample_index).longValue();
+								sample.size = stsz.sample_size_table.get(audio_sample_count).longValue();
 
 								byte[] data = new byte[(int) sample.size];
 								sample_stream.read(data);
@@ -872,23 +1007,222 @@ public class Main {
 				boxes.add(mdat);
 				box_count++;
 				depth = 0;
-				mdat.start_position=stream_position;
-				mdat.end_position=stream_position+size;
-				stream_position+=size;
 			} else if(type.equals("mdat")&&(mdat_position_flag)==0) {
-				mdat_storage=new byte[(int)size-8];
-				fis.read(mdat_storage);
 				ismdatafter=1;
+				mdat_size=size;
+				if (mdat_size == 1) {
+					byte[] largesize = new byte[8];
+					fis.read(largesize);
+					mdat_largesize = Util.ByteArrayToLong(largesize);
+				}
+				fis.skip(size-8);
 			}else {
 				System.out.println(size);
 				System.out.println(type);
 				fis.skip(size - 8);
+				stream_position+=size;
 			}
 		}
-		fis.close();
 		
 		if(ismdatafter==1) {//mdat 나중에 까기
+			boxes.MediaDataBox mdat = new boxes.MediaDataBox("mdat");
+			mdat.size = mdat_size;
+			if (mdat_size == 1) {
+				byte[] largesize = new byte[8];
+				fis.read(largesize);
+				mdat.largesize = Util.ByteArrayToLong(largesize);
+			}
+			int sample_index = -1;
+			int stsc_index = 0;
+			int chunk_index = 0;
+			int sample_count = 0;
+			int stts_index = 0;
+			int stts_count = 0;
+			int sample_duration = 0;
+			long sample_offset = 0;
+			int video_sample_count = 0;
+			int stss_index = 0;
+			int audio_sample_count = 0;
+			int keyframe_index = 0;
+
+			if (mdat_size == 1) {
+				System.out.println("mdat\n" + "Size: " + mdat.largesize + "\n" + "Type: MediaDataBox\n");
+			} else {
+				System.out.println("mdat\n" + "Size: " + mdat.size + "\n" + "Type: MediaDataBox\n");
+			}
+			boxes.SampletoChunkBox stsc = null;
+			boxes.SampleSizeBox stsz = null;
+			boxes.ChunkOffsetBox stco = null;
+			boxes.TimetoSampleBox stts = null;
+			boxes.SyncSampleBox stss = null;
+			for (int i = 0; i < full_box_count; i++) {
+				if (full_boxes.get(i).type.equals("vmhd")) { // video
+					if(sample_index==-1) {
+
+						sample_index = 0;	
+					}
+					stsc_index = 0;
+					chunk_index = 0;
+					sample_count = 0;
+					stts_index = 0;
+					stts_count = 0;
+					sample_duration = 0;
+					stss_index = 0;
+					sample_offset = 0;
+					System.out.println("\nVideo Sample");
+
+					stco = mdat.FindSTCO(i, full_boxes, full_box_count);
+					stss = mdat.FindSTSS(i, full_boxes, full_box_count);
+					stsc = mdat.FindSTSC(i, full_boxes, full_box_count);
+					stsz = mdat.FindSTSZ(i, full_boxes, full_box_count);
+					stts = mdat.FindSTTS(i, full_boxes, full_box_count);
+					if (stss != null) {
+						keyframe_index = (int) stss.sync_sample_table.get(stss_index).intValue();
+					} else {
+						keyframe_index = -1;
+					}
+					sample_count = (int) stsc.table.get(0).samples_per_chunk;
+					sample_duration = (int) stts.time_to_sample_table.get(0).sample_duration;
+					for (chunk_index = 0; chunk_index < stco.entry_count; chunk_index++) {
+						if ((stsc_index + 1) < stsc.entry_count) {
+							if (stsc.table.get(stsc_index + 1).first_chunk == (chunk_index + 1)) {
+								sample_count = (int) stsc.table.get(stsc_index + 1).samples_per_chunk;
+								stsc_index++;
+							}
+						}
+						InputStream sample_stream = new FileInputStream("output.mp4");
+						sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
+						sample_offset = stco.chunk_offset_table.get(chunk_index);
+
+						for (int k = 0; k < sample_count; k++) {
+							if (stts.time_to_sample_table.get(stts_index).sample_count == stts_count) {
+								sample_duration = (int) stts.time_to_sample_table
+										.get(stts_index + 1).sample_duration;
+								stts_index++;
+							}
+							boxes.MediaData sample = new boxes.MediaData();
+							sample.chunk_number = chunk_index + 1;
+							sample.duration = sample_duration;
+							if(k>0) {
+								sample.offset = mdat.datas.get(sample_index-1).offset+mdat.datas.get(sample_index-1).size;
+							}else {
+								sample.offset = sample_offset;
+							}
+							sample.sample_index = sample_index + 1;
+							sample.size = stsz.sample_size_table.get(video_sample_count).longValue();
+							if (keyframe_index == -1) {
+								sample.iskeyframe = 1;
+							} else if ((sample.sample_index == keyframe_index)) {
+								sample.iskeyframe = 1;
+								if (stss.entry_count != (stss_index + 1)) {
+									keyframe_index = stss.sync_sample_table.get(++stss_index).intValue();
+								}
+							}
+							byte[] data = new byte[(int) sample.size];
+							sample_stream.read(data);
+							sample.data = Util.ByteArrayToHex(data);
+
+							mdat.datas.add(sample);
+
+							video_sample_count++;
+							sample_index++;
+							stts_count++;
+						}
+						sample_stream.close();
+					}
+					stsc = null;
+					stsz = null;
+					stco = null;
+					stts = null;
+					stss = null;
+
+//					for(int k=0;k<sample_index;k++) {
+//						mdat.MDATBox_Datas_Print(k);
+//					}
+//					
+					for (int k = 0; k < 5; k++) {
+						mdat.MDATBox_Datas_Print(k);
+					}
+				} else if (full_boxes.get(i).type.equals("smhd")) { // audio
+					System.out.println("\nAudio Sample");
+					if(sample_index==-1) {
+
+						sample_index = 0;
 			
+					}
+					stsc_index = 0;
+					chunk_index = 0;
+					sample_count = 0;
+					stts_index = 0;
+					stts_count = 0;
+					sample_duration = 0;
+					sample_offset = 0;
+					stss_index = 0;
+					stco = mdat.FindSTCO(i, full_boxes, full_box_count);
+					stsc = mdat.FindSTSC(i, full_boxes, full_box_count);
+					stsz = mdat.FindSTSZ(i, full_boxes, full_box_count);
+					stts = mdat.FindSTTS(i, full_boxes, full_box_count);
+
+					sample_count = (int) stsc.table.get(0).samples_per_chunk;
+					sample_duration = (int) stts.time_to_sample_table.get(0).sample_duration;
+					for (chunk_index = 0; chunk_index < stco.entry_count; chunk_index++) {
+						if ((stsc_index + 1) < stsc.entry_count) {
+							if (stsc.table.get(stsc_index + 1).first_chunk == (chunk_index + 1)) {
+								sample_count = (int) stsc.table.get(stsc_index + 1).samples_per_chunk;
+								stsc_index++;
+							}
+						}
+						InputStream sample_stream = new FileInputStream("output.mp4");
+						sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
+						sample_offset = stco.chunk_offset_table.get(chunk_index);
+
+						for (int k = 0; k < sample_count; k++) {
+							if (stts.time_to_sample_table.get(stts_index).sample_count == stts_count) {
+								sample_duration = (int) stts.time_to_sample_table
+										.get(stts_index + 1).sample_duration;
+								stts_index++;
+							}
+							boxes.MediaData sample = new boxes.MediaData();
+							sample.chunk_number = chunk_index + 1;
+							sample.duration = sample_duration;
+							if(k>0) {
+								sample.offset = mdat.datas.get(sample_index-1).offset+mdat.datas.get(sample_index-1).size;
+							}else {
+								sample.offset = sample_offset;
+							}
+							sample.sample_index = sample_index + 1;
+							sample.size = stsz.sample_size_table.get(audio_sample_count).longValue();
+
+							byte[] data = new byte[(int) sample.size];
+							sample_stream.read(data);
+							sample.data = Util.ByteArrayToHex(data);
+
+							mdat.datas.add(sample);
+							sample_index++;
+							stts_count++;
+							audio_sample_count++;
+						}
+
+						sample_stream.close();
+					}
+					stsc = null;
+					stsz = null;
+					stco = null;
+					stts = null;
+					stss = null;
+
+//					for(int k=0;k<sample_index;k++) {
+//						mdat.MDATBox_Datas_Print(k);
+//					}
+//					
+					for (int k = video_sample_count; k < video_sample_count + 5; k++) {
+						mdat.MDATBox_Datas_Print(k);
+					}
+				}
+			}
+			boxes.add(mdat);
+			box_count++;
+			depth = 0;
 		}
 		
 		
