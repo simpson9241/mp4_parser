@@ -363,6 +363,64 @@ public class Main {
 				trak.start_position=stream_position;
 				trak.end_position=stream_position+size;
 				stream_position+=8;
+			}else if (type.equals("mfra")) {
+				MovieFragmentRandomAccessBox mfra = new MovieFragmentRandomAccessBox("mfra");
+				mfra.size = size;
+				System.out.println(mfra);
+				
+				boxes.add(mfra);
+				box_count++;
+
+				mfra.struct_depth= 0;
+				mfra.start_position=stream_position;
+				mfra.end_position=stream_position+size;
+				stream_position+=8;
+			}else if (type.equals("tfra")) {
+				byte[] version = new byte[1];
+				fis.read(version);
+				long v = Util.ByteArrayToLong(version);
+				
+				byte[] flags = new byte[3];
+				fis.read(flags);
+				long f = Util.ByteArrayToLong(flags);
+
+				TrackFragmentRandomAccessBox tfra = new TrackFragmentRandomAccessBox("tfra", v, f);
+				tfra.size = size;
+
+				tfra.SetTFRABox(fis);
+
+				full_boxes.add(tfra);
+				full_box_count++;
+				
+				System.out.println(tfra);
+
+				if (tfra.entry_count != 0) {
+					tfra.TFRABox_Table_Print();
+				}
+				tfra.start_position=stream_position;
+				tfra.end_position=stream_position+size;
+				stream_position+=size;
+			}else if (type.equals("mfro")) {
+				byte[] version = new byte[1];
+				fis.read(version);
+				long v = Util.ByteArrayToLong(version);
+				
+				byte[] flags = new byte[3];
+				fis.read(flags);
+				long f = Util.ByteArrayToLong(flags);
+
+				MovieFragmentRandomAccessOffsetBox mfro = new MovieFragmentRandomAccessOffsetBox("mfro", v, f);
+				mfro.size = size;
+
+				mfro.SetMFROBox(fis);
+
+				full_boxes.add(mfro);
+				full_box_count++;
+				
+				System.out.println(mfro);
+				mfro.start_position=stream_position;
+				mfro.end_position=stream_position+size;
+				stream_position+=size;
 			}else if (type.equals("edts")) {
 				EditBox edts = new EditBox("edts");
 				edts.size = size;
