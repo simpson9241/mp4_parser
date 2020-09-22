@@ -20,7 +20,6 @@ public class TrackExtendsBox extends FullBox {
 	public long default_sample_description_index;
 	public long default_sample_duration;
 	public long default_sample_size;
-	public long default_sample_flags;
 	
 	public void SetTREXBox(InputStream fis) throws IOException {
 		
@@ -37,19 +36,20 @@ public class TrackExtendsBox extends FullBox {
 		byte[] default_sample_size= new byte[4];
 		fis.read(default_sample_size);
 		this.default_sample_size=Util.ByteArrayToLong(default_sample_size);
+		
 		byte[] sample_flags_1= new byte[1];
 		fis.read(sample_flags_1);
-		this.sample_depends_on=(int) (Util.ByteArrayToLong(sample_flags_1)&0x00000011);
+		this.sample_depends_on=(int) (Util.ByteArrayToLong(sample_flags_1)&3);
 		
 		byte[] sample_flags_2= new byte[1];
 		fis.read(sample_flags_2);
 		this.sample_is_depended_on=(int) (Util.ByteArrayToLong(sample_flags_2)>>6);
-		this.sample_has_redundancy=(int) ((Util.ByteArrayToLong(sample_flags_2)>>4)&0x0011);
-		this.sample_padding_value=(int) ((Util.ByteArrayToLong(sample_flags_2)>>1)&0x0000111);
-		this.sample_is_difference_sample=(int) (Util.ByteArrayToLong(sample_flags_2)&0x00000001);
+		this.sample_has_redundancy=(int) ((Util.ByteArrayToLong(sample_flags_2)>>4)&3);
+		this.sample_padding_value=(int) ((Util.ByteArrayToLong(sample_flags_2)>>1)&7);
+		this.sample_is_difference_sample=(int) (Util.ByteArrayToLong(sample_flags_2)&1);
 		byte[] sample_flags_3= new byte[2];
 		fis.read(sample_flags_3);
-		this.sample_degradation_priority=(int) Util.ByteArrayToLong(sample_flags_2);
+		this.sample_degradation_priority=(int) Util.ByteArrayToLong(sample_flags_3);
 	}
 	
 	@Override

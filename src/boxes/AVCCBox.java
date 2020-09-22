@@ -44,10 +44,10 @@ public class AVCCBox {
 		
 		byte[] lengthSizeMinusOne= new byte[1];
 		fis.read(lengthSizeMinusOne);
-		this.lengthSizeMinusOne = (int)(Util.ByteArrayToLong(lengthSizeMinusOne)&0x00000011);
+		this.lengthSizeMinusOne = (int)(Util.ByteArrayToLong(lengthSizeMinusOne)&3);
 		byte[] numOfSequenceParameterSets= new byte[1];
 		fis.read(numOfSequenceParameterSets);
-		this.numOfSequenceParameterSets = (int)(Util.ByteArrayToLong(numOfSequenceParameterSets)&0x00011111);
+		this.numOfSequenceParameterSets = (int)(Util.ByteArrayToLong(numOfSequenceParameterSets)&31);
 		for(int i=0;i<this.numOfSequenceParameterSets;i++) {
 			SequenceParameterSet sequenceparameterset=new SequenceParameterSet();
 			byte[] sequenceParameterSetLength= new byte[2];
