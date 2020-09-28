@@ -12,14 +12,13 @@ public class Main {
 		//trex box 데이터 오차 있음
 		//각 기능의 모듈화
 		//mdat 깔때 아스키 코드도 같이 까게 만들어놓기
-		//탭 스트링 빌더 클래스 안에 넣어버리거나 모듈화해서 함수로 만들기
 		String source="BigBuckBunny.mp4";
 		long stream_position=0;
 		int mdat_position_flag=0;//먼저오면 0 나중에 오면 1
 		int ismdatafter=0;
 		int fragment_flag=0; //moof가 있으면 fmp4 -> 1
-		ArrayList<boxes.Box> boxes = new ArrayList<>();
-		ArrayList<boxes.FullBox> full_boxes = new ArrayList<>();
+		ArrayList<Box> boxes = new ArrayList<>();
+		ArrayList<FullBox> full_boxes = new ArrayList<>();
 		int box_count = 0;
 		int full_box_count = 0;
 		FileInputStream fis = new FileInputStream(source);
