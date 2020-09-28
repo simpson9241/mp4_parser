@@ -9,9 +9,8 @@ import boxes.*;
 
 public class Main {
 	public static void main(String[] args) throws Exception {
-		//trex box 데이터 오차 있음
 		//mdat 깔때 아스키 코드도 같이 까게 만들어놓기
-		String source="BigBuckBunny.mp4";
+		String source="video_960_30.mp4";
 		long stream_position=0;
 		int mdat_position_flag=0;//먼저오면 0 나중에 오면 1
 		int ismdatafter=0;
