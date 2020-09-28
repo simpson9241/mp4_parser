@@ -18,8 +18,6 @@ public class Main {
 		int mdat_position_flag=0;//먼저오면 0 나중에 오면 1
 		int ismdatafter=0;
 		int fragment_flag=0; //moof가 있으면 fmp4 -> 1
-		int depth = 0; // 계층 구조 확인용
-		int which_first_flag = 0; // moov 1 mdat 2
 		ArrayList<boxes.Box> boxes = new ArrayList<>();
 		ArrayList<boxes.FullBox> full_boxes = new ArrayList<>();
 		int box_count = 0;
@@ -27,14 +25,12 @@ public class Main {
 		FileInputStream fis = new FileInputStream(source);
 		byte[] size_byte = new byte[4];
 		byte[] type_byte = new byte[4];
-		byte[] mdat_storage;
 		long size;
 		String type;
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeZone(TimeZone.getTimeZone("GMT"));
 		long mdat_size=0;
 		long mdat_largesize=0;
-		
 		long v,f;
 		int sample_index = -1;
 		int stsc_index = 0;
