@@ -10,7 +10,6 @@ import boxes.*;
 public class Main {
 	public static void main(String[] args) throws Exception {
 		//trex box 데이터 오차 있음
-		//각 기능의 모듈화
 		//mdat 깔때 아스키 코드도 같이 까게 만들어놓기
 		String source="BigBuckBunny.mp4";
 		long stream_position=0;
@@ -968,7 +967,6 @@ public class Main {
 						sample_stream.close();
 					}
 					mdat.SetBoxesNull(stsc, stsz, stco, stts, stss);
-
 //					for(int k=0;k<sample_index;k++) {
 //						mdat.MDATBox_Datas_Print(k);
 //					}
