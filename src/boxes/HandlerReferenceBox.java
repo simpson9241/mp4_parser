@@ -2,6 +2,7 @@ package boxes;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 
 public class HandlerReferenceBox extends FullBox{
 	
@@ -43,6 +44,29 @@ public class HandlerReferenceBox extends FullBox{
 		tab.toString()+"\tComponent Name: "+component_name+"\n";
 	}
 	
-	
+	public void SetStructDepth(int box_count, int full_box_count, ArrayList<Box> boxes, ArrayList<FullBox> full_boxes,long stream_position) {
+		for(int i=full_box_count-1;i>=0;i--) {
+			if(full_boxes.get(i).type.equals("meta")) {
+				if(full_boxes.get(i).end_position>stream_position) {
+					struct_depth=full_boxes.get(i).struct_depth+1;
+					break;
+				}
+			}
+		}
+		
+		for(int i=box_count-1;i>=0;i--) {
+			if(boxes.get(i).type.equals("mdia")) {
+				if(boxes.get(i).end_position>stream_position) {
+					struct_depth=3;
+					break;
+				}
+			}else if(boxes.get(i).type.equals("minf")){
+				if(boxes.get(i).end_position>stream_position) {
+					struct_depth=4;
+					break;
+				}
+			}
+		}
+	}
 
 }

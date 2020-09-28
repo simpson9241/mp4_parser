@@ -75,4 +75,20 @@ public class SampletoGroupBox extends FullBox{
 				tab.toString()+"\tNumber of Entries: "+ entry_count+"\n";
 	}
 	
+	public void SetStructDepth(int box_count, ArrayList<Box> boxes,long stream_position) {
+		for(int i=box_count-1;i>=0;i--) {
+			if(boxes.get(i).type.equals("stbl")) {
+				if(boxes.get(i).end_position>stream_position) {
+					struct_depth=5;
+					break;
+				}
+			}else if(boxes.get(i).type.equals("traf")) {
+				if(boxes.get(i).end_position>stream_position) {
+					struct_depth=2;
+					break;
+				}
+			}
+		}
+	}
+	
 }

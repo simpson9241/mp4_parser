@@ -13,6 +13,7 @@ public class Main {
 		//각 기능의 모듈화
 		//mdat 깔때 아스키 코드도 같이 까게 만들어놓기
 		//탭 스트링 빌더 클래스 안에 넣어버리거나 모듈화해서 함수로 만들기
+		String source="BigBuckBunny.mp4";
 		long stream_position=0;
 		int mdat_position_flag=0;//먼저오면 0 나중에 오면 1
 		int ismdatafter=0;
@@ -23,7 +24,7 @@ public class Main {
 		ArrayList<boxes.FullBox> full_boxes = new ArrayList<>();
 		int box_count = 0;
 		int full_box_count = 0;
-		FileInputStream fis = new FileInputStream("BigBuckBunny.mp4");
+		FileInputStream fis = new FileInputStream(source);
 		byte[] size_byte = new byte[4];
 		byte[] type_byte = new byte[4];
 		byte[] mdat_storage;
@@ -225,33 +226,7 @@ public class Main {
 				stream_position+=size;
 			} else if (type.equals("free")) {
 				FreeSpaceBox free = new FreeSpaceBox("free");
-				if(box_count>0) {
-					if(full_box_count>0) {
-						if(boxes.get(box_count-1).end_position>full_boxes.get(full_box_count-1).end_position) {
-							if(full_boxes.get(full_box_count-1).end_position>stream_position) {
-								free.struct_depth=full_boxes.get(full_box_count-1).struct_depth+1;
-							}else {
-								free.struct_depth=full_boxes.get(full_box_count-1).struct_depth;
-							}
-						}else {
-							if(boxes.get(box_count-1).end_position>stream_position) {
-								free.struct_depth=boxes.get(box_count-1).struct_depth+1;
-							}else {
-								free.struct_depth=boxes.get(box_count-1).struct_depth;
-							}
-						}
-					}else {
-						if(boxes.get(box_count-1).end_position>stream_position) {
-							free.struct_depth=boxes.get(box_count-1).struct_depth+1;
-						}else {
-							free.struct_depth=boxes.get(box_count-1).struct_depth;
-						}
-					}
-				}else {
-					free.struct_depth=0;
-				}
-				
-				
+				free.SetStructDepth(box_count, full_box_count, boxes, full_boxes, stream_position);
 				free.size = size;
 				fis.skip(free.size - 8);
 				System.out.println(free);
@@ -262,33 +237,7 @@ public class Main {
 				stream_position+=size;
 			} else if (type.equals("skip")) {
 				FreeSpaceBox skip = new FreeSpaceBox("skip");
-				
-				if(box_count>0) {
-					if(full_box_count>0) {
-						if(boxes.get(box_count-1).end_position>full_boxes.get(full_box_count-1).end_position) {
-							if(full_boxes.get(full_box_count-1).end_position>stream_position) {
-								skip.struct_depth=full_boxes.get(full_box_count-1).struct_depth+1;
-							}else {
-								skip.struct_depth=full_boxes.get(full_box_count-1).struct_depth;
-							}
-						}else {
-							if(boxes.get(box_count-1).end_position>stream_position) {
-								skip.struct_depth=boxes.get(box_count-1).struct_depth+1;
-							}else {
-								skip.struct_depth=boxes.get(box_count-1).struct_depth;
-							}
-						}
-					}else {
-						if(boxes.get(box_count-1).end_position>stream_position) {
-							skip.struct_depth=boxes.get(box_count-1).struct_depth+1;
-						}else {
-							skip.struct_depth=boxes.get(box_count-1).struct_depth;
-						}
-					}
-				}else {
-					skip.struct_depth=0;
-				}
-				
+				skip.SetStructDepth(box_count, full_box_count, boxes, full_boxes, stream_position);
 				skip.size = size;
 				fis.skip(skip.size - 8);
 				System.out.println(skip.toString());
@@ -417,18 +366,8 @@ public class Main {
 				
 				UserDataBox udta = new UserDataBox("udta");
 				udta.size = size;
+				udta.SetStructDepth(box_count, boxes, stream_position);
 				
-				for(int i=box_count-1;i>=0;i--) {
-					if(boxes.get(i).type.equals("trak")) {
-						if(boxes.get(i).end_position>stream_position) {
-							udta.struct_depth=boxes.get(i).struct_depth+1;
-							break;
-						}else{
-							udta.struct_depth=1;
-							break;
-						}
-					}
-				}
 				System.out.println(udta.toString());
 				boxes.add(udta);
 				box_count++;
@@ -455,30 +394,7 @@ public class Main {
 				// Flags
 				fis.skip(3);
 				HandlerReferenceBox hdlr = new HandlerReferenceBox("hdlr", v, 0);
-				
-				for(int i=full_box_count-1;i>=0;i--) {
-					if(full_boxes.get(i).type.equals("meta")) {
-						if(full_boxes.get(i).end_position>stream_position) {
-							hdlr.struct_depth=full_boxes.get(i).struct_depth+1;
-							break;
-						}
-					}
-				}
-				
-				for(int i=box_count-1;i>=0;i--) {
-					if(boxes.get(i).type.equals("mdia")) {
-						if(boxes.get(i).end_position>stream_position) {
-							hdlr.struct_depth=3;
-							break;
-						}
-					}else if(boxes.get(i).type.equals("minf")){
-						if(boxes.get(i).end_position>stream_position) {
-							hdlr.struct_depth=4;
-							break;
-						}
-					}
-				}
-				
+				hdlr.SetStructDepth(box_count, full_box_count, boxes, full_boxes, stream_position);
 				hdlr.size = size;
 				hdlr.SetHDLRBox(fis);
 				System.out.println(hdlr.toString());
@@ -518,23 +434,7 @@ public class Main {
 				boxes.add(dinf);
 				box_count++;
 				
-				for(int i=full_box_count-1;i>=0;i--) {
-					if(full_boxes.get(i).type.equals("meta")) {
-						if(full_boxes.get(i).end_position>stream_position) {
-							dinf.struct_depth=full_boxes.get(i).struct_depth+1;
-							break;
-						}
-					}
-				}
-				
-				for(int i=box_count-1;i>=0;i--) {
-					if(boxes.get(i).type.equals("minf")) {
-						if(boxes.get(i).end_position>stream_position) {
-							dinf.struct_depth=4;
-							break;
-						}
-					}
-				}
+				dinf.SetStructDepth(box_count, full_box_count, boxes, full_boxes, stream_position);
 				
 				System.out.println(dinf.toString());
 				dinf.start_position=stream_position;
@@ -553,14 +453,7 @@ public class Main {
 				full_boxes.add(dref);
 				full_box_count++;
 				
-				for(int i=box_count-1;i>=0;i--) {
-					if(boxes.get(i).type.equals("dinf")) {
-						if(boxes.get(i).end_position>stream_position) {
-							dref.struct_depth=boxes.get(i).struct_depth+1;
-							break;
-						}
-					}
-				}
+				dref.SetStructDepth(box_count, boxes, stream_position);
 
 				System.out.println(dref.toString());
 
@@ -678,19 +571,7 @@ public class Main {
 				full_boxes.add(sbgp);
 				full_box_count++;
 				
-				for(int i=box_count-1;i>=0;i--) {
-					if(boxes.get(i).type.equals("stbl")) {
-						if(boxes.get(i).end_position>stream_position) {
-							sbgp.struct_depth=5;
-							break;
-						}
-					}else if(boxes.get(i).type.equals("traf")) {
-						if(boxes.get(i).end_position>stream_position) {
-							sbgp.struct_depth=2;
-							break;
-						}
-					}
-				}
+				sbgp.SetStructDepth(box_count, boxes, stream_position);
 
 				System.out.println(sbgp.toString());
 
@@ -829,14 +710,7 @@ public class Main {
 
 							sample_index = 0;	
 						}
-						stsc_index = 0;
-						chunk_index = 0;
-						sample_count = 0;
-						stts_index = 0;
-						stts_count = 0;
-						sample_duration = 0;
-						stss_index = 0;
-						sample_offset = 0;
+						mdat.SetVariablesZero(stsc_index, chunk_index, video_sample_count, stts_index, stts_count, sample_duration, stss_index, sample_offset);
 						System.out.println("\nVideo Sample");
 
 						stco = mdat.FindSTCO(i, full_boxes, full_box_count);
@@ -858,37 +732,18 @@ public class Main {
 									stsc_index++;
 								}
 							}
-							InputStream sample_stream = new FileInputStream("BigBuckBunny.mp4");
+							InputStream sample_stream = new FileInputStream(source);
 							sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 							sample_offset = stco.chunk_offset_table.get(chunk_index);
 
 							for (int k = 0; k < sample_count; k++) {
-								if (stts.time_to_sample_table.get(stts_index).sample_count == stts_count) {
+								if ((stts.time_to_sample_table.get(stts_index).sample_count == stts_count)&&(stts.entry_count!=stts_index+1)) {
 									sample_duration = (int) stts.time_to_sample_table
 											.get(stts_index + 1).sample_duration;
 									stts_index++;
 								}
 								MediaData sample = new MediaData();
-								sample.chunk_number = chunk_index + 1;
-								sample.duration = sample_duration;
-								if(k>0) {
-									sample.offset = mdat.datas.get(sample_index-1).offset+mdat.datas.get(sample_index-1).size;
-								}else {
-									sample.offset = sample_offset;
-								}
-								sample.sample_index = sample_index + 1;
-								sample.size = stsz.sample_size_table.get(video_sample_count).longValue();
-								if (keyframe_index == -1) {
-									sample.iskeyframe = 1;
-								} else if ((sample.sample_index == keyframe_index)) {
-									sample.iskeyframe = 1;
-									if (stss.entry_count != (stss_index + 1)) {
-										keyframe_index = stss.sync_sample_table.get(++stss_index).intValue();
-									}
-								}
-								byte[] data = new byte[(int) sample.size];
-								sample_stream.read(data);
-								sample.data = Util.ByteArrayToHex(data);
+								sample.SetVideoVariables(k, chunk_index, sample_duration, mdat, sample_index, sample_offset, stsz, video_sample_count, keyframe_index, stss, stss_index, sample_stream);
 
 								mdat.datas.add(sample);
 
@@ -902,7 +757,6 @@ public class Main {
 //						for(int k=0;k<sample_index;k++) {
 //							mdat.MDATBox_Datas_Print(k);
 //						}
-//						
 						for (int k = 0; k < 5; k++) {
 							mdat.MDATBox_Datas_Print(k);
 						}
@@ -913,14 +767,7 @@ public class Main {
 							sample_index = 0;
 				
 						}
-						stsc_index = 0;
-						chunk_index = 0;
-						sample_count = 0;
-						stts_index = 0;
-						stts_count = 0;
-						sample_duration = 0;
-						sample_offset = 0;
-						stss_index = 0;
+						mdat.SetVariablesZero(stsc_index, chunk_index, audio_sample_count, stts_index, stts_count, sample_duration, stss_index, sample_offset);
 						stco = mdat.FindSTCO(i, full_boxes, full_box_count);
 						stsc = mdat.FindSTSC(i, full_boxes, full_box_count);
 						stsz = mdat.FindSTSZ(i, full_boxes, full_box_count);
@@ -935,35 +782,22 @@ public class Main {
 									stsc_index++;
 								}
 							}
-							InputStream sample_stream = new FileInputStream("BigBuckBunny.mp4");
+							InputStream sample_stream = new FileInputStream(source);
 							sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 							sample_offset = stco.chunk_offset_table.get(chunk_index);
 
 							for (int k = 0; k < sample_count; k++) {
-								if (stts.time_to_sample_table.get(stts_index).sample_count == stts_count) {
-									sample_duration = (int) stts.time_to_sample_table
-											.get(stts_index + 1).sample_duration;
+								if ((stts.time_to_sample_table.get(stts_index).sample_count == stts_count)&&(stts.entry_count!=stts_index+1)) {
+									sample_duration = (int) stts.time_to_sample_table.get(stts_index + 1).sample_duration;
 									stts_index++;
 								}
+								audio_sample_count++;
 								MediaData sample = new MediaData();
-								sample.chunk_number = chunk_index + 1;
-								sample.duration = sample_duration;
-								if(k>0) {
-									sample.offset = mdat.datas.get(sample_index-1).offset+mdat.datas.get(sample_index-1).size;
-								}else {
-									sample.offset = sample_offset;
-								}
-								sample.sample_index = sample_index + 1;
-								sample.size = stsz.sample_size_table.get(audio_sample_count).longValue();
-
-								byte[] data = new byte[(int) sample.size];
-								sample_stream.read(data);
-								sample.data = Util.ByteArrayToHex(data);
+								sample.SetAudioVariables(k, chunk_index, sample_duration, mdat, sample_index, sample_offset, stsz, audio_sample_count, keyframe_index, stss, stss_index, sample_stream);
 
 								mdat.datas.add(sample);
 								sample_index++;
 								stts_count++;
-								audio_sample_count++;
 							}
 
 							sample_stream.close();
@@ -1060,14 +894,7 @@ public class Main {
 
 						sample_index = 0;	
 					}
-					stsc_index = 0;
-					chunk_index = 0;
-					sample_count = 0;
-					stts_index = 0;
-					stts_count = 0;
-					sample_duration = 0;
-					stss_index = 0;
-					sample_offset = 0;
+					mdat.SetVariablesZero(stsc_index, chunk_index, video_sample_count, stts_index, stts_count, sample_duration, stss_index, sample_offset);
 					System.out.println("\nVideo Sample");
 
 					stco = mdat.FindSTCO(i, full_boxes, full_box_count);
@@ -1089,37 +916,17 @@ public class Main {
 								stsc_index++;
 							}
 						}
-						InputStream sample_stream = new FileInputStream("BigBuckBunny.mp4");
+						InputStream sample_stream = new FileInputStream(source);
 						sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 						sample_offset = stco.chunk_offset_table.get(chunk_index);
 
 						for (int k = 0; k < sample_count; k++) {
-							if (stts.time_to_sample_table.get(stts_index).sample_count == stts_count) {
-								sample_duration = (int) stts.time_to_sample_table
-										.get(stts_index + 1).sample_duration;
+							if ((stts.time_to_sample_table.get(stts_index).sample_count == stts_count)&&(stts.entry_count!=stts_index+1)) {
+								sample_duration = (int) stts.time_to_sample_table.get(stts_index + 1).sample_duration;
 								stts_index++;
 							}
 							MediaData sample = new MediaData();
-							sample.chunk_number = chunk_index + 1;
-							sample.duration = sample_duration;
-							if(k>0) {
-								sample.offset = mdat.datas.get(sample_index-1).offset+mdat.datas.get(sample_index-1).size;
-							}else {
-								sample.offset = sample_offset;
-							}
-							sample.sample_index = sample_index + 1;
-							sample.size = stsz.sample_size_table.get(video_sample_count).longValue();
-							if (keyframe_index == -1) {
-								sample.iskeyframe = 1;
-							} else if ((sample.sample_index == keyframe_index)) {
-								sample.iskeyframe = 1;
-								if (stss.entry_count != (stss_index + 1)) {
-									keyframe_index = stss.sync_sample_table.get(++stss_index).intValue();
-								}
-							}
-							byte[] data = new byte[(int) sample.size];
-							sample_stream.read(data);
-							sample.data = Util.ByteArrayToHex(data);
+							sample.SetVideoVariables(k, chunk_index, sample_duration, mdat, sample_index, sample_offset, stsz, video_sample_count, keyframe_index, stss, stss_index, sample_stream);
 
 							mdat.datas.add(sample);
 
@@ -1145,14 +952,7 @@ public class Main {
 						sample_index = 0;
 			
 					}
-					stsc_index = 0;
-					chunk_index = 0;
-					sample_count = 0;
-					stts_index = 0;
-					stts_count = 0;
-					sample_duration = 0;
-					sample_offset = 0;
-					stss_index = 0;
+					mdat.SetVariablesZero(stsc_index, chunk_index, audio_sample_count, stts_index, stts_count, sample_duration, stss_index, sample_offset);
 					stco = mdat.FindSTCO(i, full_boxes, full_box_count);
 					stsc = mdat.FindSTSC(i, full_boxes, full_box_count);
 					stsz = mdat.FindSTSZ(i, full_boxes, full_box_count);
@@ -1167,35 +967,25 @@ public class Main {
 								stsc_index++;
 							}
 						}
-						InputStream sample_stream = new FileInputStream("BigBuckBunny.mp4");
+						InputStream sample_stream = new FileInputStream(source);
 						sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 						sample_offset = stco.chunk_offset_table.get(chunk_index);
-
 						for (int k = 0; k < sample_count; k++) {
-							if (stts.time_to_sample_table.get(stts_index).sample_count == stts_count) {
-								sample_duration = (int) stts.time_to_sample_table
-										.get(stts_index + 1).sample_duration;
+							if(mdat.datas.size()>=video_sample_count+stsz.entry_count) {
+//								mdat.MDATBox_Datas_Print(mdat.datas.size()-1);
+								break;
+							}
+							if ((stts.time_to_sample_table.get(stts_index).sample_count == stts_count)&&(stts.entry_count!=stts_index+1)) {
+								sample_duration = (int) stts.time_to_sample_table.get(stts_index + 1).sample_duration;
 								stts_index++;
 							}
 							MediaData sample = new MediaData();
-							sample.chunk_number = chunk_index + 1;
-							sample.duration = sample_duration;
-							if(k>0) {
-								sample.offset = mdat.datas.get(sample_index-1).offset+mdat.datas.get(sample_index-1).size;
-							}else {
-								sample.offset = sample_offset;
-							}
-							sample.sample_index = sample_index + 1;
-							sample.size = stsz.sample_size_table.get(audio_sample_count).longValue();
-
-							byte[] data = new byte[(int) sample.size];
-							sample_stream.read(data);
-							sample.data = Util.ByteArrayToHex(data);
+							audio_sample_count++;
+							sample.SetAudioVariables(k, chunk_index, sample_duration, mdat, sample_index, sample_offset, stsz, audio_sample_count, keyframe_index, stss, stss_index, sample_stream);
 
 							mdat.datas.add(sample);
 							sample_index++;
 							stts_count++;
-							audio_sample_count++;
 						}
 
 						sample_stream.close();

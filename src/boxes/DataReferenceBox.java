@@ -84,5 +84,16 @@ public class DataReferenceBox extends FullBox{
 				tab.toString()+"\tFlags: "+ flags+"\n"+
 				tab.toString()+"\tNumber of Entries: "+ entry_count+"\n";
 	}
+	
+	public void SetStructDepth(int box_count, ArrayList<Box> boxes,long stream_position) {
+		for(int i=box_count-1;i>=0;i--) {
+			if(boxes.get(i).type.equals("dinf")) {
+				if(boxes.get(i).end_position>stream_position) {
+					struct_depth=boxes.get(i).struct_depth+1;
+					break;
+				}
+			}
+		}
+	}
 
 }

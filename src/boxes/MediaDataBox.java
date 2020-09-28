@@ -89,5 +89,15 @@ public class MediaDataBox extends Box{
 		stts=null;
 		stss=null;
 	}
+	public void SetVariablesZero(int stsc_index,int chunk_index, int sample_count, int stts_index,int stts_count, int sample_duration, int stss_index, long sample_offset) {
+		stsc_index=0;
+		chunk_index=0;
+		sample_count=0;
+		stts_index=0;
+		stts_count=0;
+		sample_duration=0;
+		stss_index=0;
+		sample_offset=0;
+	}
 
 }
