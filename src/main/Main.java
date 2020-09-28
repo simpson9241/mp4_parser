@@ -13,7 +13,7 @@ public class Main {
 		//각 기능의 모듈화
 		//mdat 깔때 아스키 코드도 같이 까게 만들어놓기
 		//탭 스트링 빌더 클래스 안에 넣어버리거나 모듈화해서 함수로 만들기
-		String source="BigBuckBunny.mp4";
+		String source="output.mp4";
 		long stream_position=0;
 		int mdat_position_flag=0;//먼저오면 0 나중에 오면 1
 		int ismdatafter=0;
@@ -873,9 +873,7 @@ public class Main {
 			MediaDataBox mdat = new MediaDataBox("mdat");
 			mdat.size = mdat_size;
 			if (mdat_size == 1) {
-				byte[] largesize = new byte[8];
-				fis.read(largesize);
-				mdat.largesize = Util.ByteArrayToLong(largesize);
+				mdat.largesize = mdat_largesize;
 			}
 
 			if (mdat_size == 1) {
