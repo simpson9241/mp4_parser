@@ -41,30 +41,38 @@ public class SampletoGroupBox extends FullBox{
 		}
 	}
 	
-	public void SBGPBox_Table_Print(String tab) {
+	public void SBGPBox_Table_Print() {
+		StringBuilder tab=new StringBuilder();
+		for(int i=0;i<struct_depth;i++) {
+			tab.append("\t");
+		}
 		if(this.entry_count>50) {
-			System.out.println(tab+"\tComposition Offset Table\n");
+			System.out.println(tab.toString()+"\tComposition Offset Table\n");
 			for(int i=0;i<50;i++) {
-				System.out.println(tab+"\tSample Count: "+this.sample_group_table.get(i).sample_count+
+				System.out.println(tab.toString()+"\tSample Count: "+this.sample_group_table.get(i).sample_count+
 						"\tGroup Description Index: "+this.sample_group_table.get(i).group_description_index+"\n");
 			}
 		}else {
-			System.out.println(tab+"\tComposition Offset Table\n");
+			System.out.println(tab.toString()+"\tComposition Offset Table\n");
 			for(int i=0;i<this.entry_count;i++) {
-				System.out.println(tab+"\tSample Count: "+this.sample_group_table.get(i).sample_count+
+				System.out.println(tab.toString()+"\tSample Count: "+this.sample_group_table.get(i).sample_count+
 						"\tGroup Description Index: "+this.sample_group_table.get(i).group_description_index+"\n");
 			}
 		}
 	}
 	
-	public String toString(String tab) {
-		// TODO Auto-generated method stub
-		return tab+"sbgp\n"+
-				tab+"\tSize: "+size+"\n"+
-				tab+"\tType: SampletoGroupBox"+"\n"+
-				tab+"\tVersion: "+ version+"\n"+
-				tab+"\tFlags: "+ flags+"\n"+
-				tab+"\tNumber of Entries: "+ entry_count+"\n";
+	public String toString() {
+		StringBuilder tab=new StringBuilder();
+		for(int i=0;i<struct_depth;i++) {
+			tab.append("\t");
+		}
+		
+		return tab.toString()+"sbgp\n"+
+				tab.toString()+"\tSize: "+size+"\n"+
+				tab.toString()+"\tType: SampletoGroupBox"+"\n"+
+				tab.toString()+"\tVersion: "+ version+"\n"+
+				tab.toString()+"\tFlags: "+ flags+"\n"+
+				tab.toString()+"\tNumber of Entries: "+ entry_count+"\n";
 	}
 	
 }

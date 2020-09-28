@@ -30,14 +30,17 @@ public class HandlerReferenceBox extends FullBox{
 		
 	}
 	
-	public String toString(String tab) {
-		
-		return tab+"hdlr\n"+
-		tab+"\tSize: "+size+"\n"+
-		tab+"\tVersion: "+version+"\n"+
-		tab+"\tComponent Type: "+component_type+"\n"+
-		tab+"\tComponent Subtype: "+component_subtype+"\n"+
-		tab+"\tComponent Name: "+component_name+"\n";
+	public String toString() {
+		StringBuilder tab=new StringBuilder();
+		for(int i=0;i<struct_depth;i++) {
+			tab.append("\t");
+		}
+		return tab.toString()+"hdlr\n"+
+		tab.toString()+"\tSize: "+size+"\n"+
+		tab.toString()+"\tVersion: "+version+"\n"+
+		tab.toString()+"\tComponent Type: "+component_type+"\n"+
+		tab.toString()+"\tComponent Subtype: "+component_subtype+"\n"+
+		tab.toString()+"\tComponent Name: "+component_name+"\n";
 	}
 	
 	

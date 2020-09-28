@@ -46,36 +46,43 @@ public class DataReferenceBox extends FullBox{
 		}
 	}
 	
-	public void DREFBox_Table_Print(String tab) {
+	public void DREFBox_Table_Print() {
+		StringBuilder tab=new StringBuilder();
+		for(int i=0;i<struct_depth;i++) {
+			tab.append("\t");
+		}
 		if(this.entry_count>50) {
-			System.out.println(tab+"\tData References\n");
+			System.out.println(tab.toString()+"\tData References\n");
 			for(int i=0;i<50;i++) {
-				System.out.println(tab+"\t\tSize: "+this.data_references.get(i).size+"\n"+
-									tab+"\t\tType: "+this.data_references.get(i).type+"\n"+
-									tab+"\t\tVersion: "+this.data_references.get(i).version+"\n"+
-									tab+"\t\tFlags: "+this.data_references.get(i).flags+"\n"+
-									tab+"\t\tData: "+this.data_references.get(i).data+"\n\n");
+				System.out.println(tab.toString()+"\t\tSize: "+this.data_references.get(i).size+"\n"+
+									tab.toString()+"\t\tType: "+this.data_references.get(i).type+"\n"+
+									tab.toString()+"\t\tVersion: "+this.data_references.get(i).version+"\n"+
+									tab.toString()+"\t\tFlags: "+this.data_references.get(i).flags+"\n"+
+									tab.toString()+"\t\tData: "+this.data_references.get(i).data+"\n\n");
 			}
 		}else {
-			System.out.println(tab+"\tData References\n");
+			System.out.println(tab.toString()+"\tData References\n");
 			for(int i=0;i<this.entry_count;i++) {
-				System.out.println(tab+"\t\tSize: "+this.data_references.get(i).size+"\n"+
-									tab+"\t\tType: "+this.data_references.get(i).type+"\n"+
-									tab+"\t\tVersion: "+this.data_references.get(i).version+"\n"+
-									tab+"\t\tFlags: "+this.data_references.get(i).flags+"\n"+
-									tab+"\t\tData: "+this.data_references.get(i).data+"\n\n");
+				System.out.println(tab.toString()+"\t\tSize: "+this.data_references.get(i).size+"\n"+
+									tab.toString()+"\t\tType: "+this.data_references.get(i).type+"\n"+
+									tab.toString()+"\t\tVersion: "+this.data_references.get(i).version+"\n"+
+									tab.toString()+"\t\tFlags: "+this.data_references.get(i).flags+"\n"+
+									tab.toString()+"\t\tData: "+this.data_references.get(i).data+"\n\n");
 			}
 		}
 	}
 	
-	public String toString(String tab) {
-		// TODO Auto-generated method stub
-		return tab+"dref\n"+
-				tab+"\tSize: "+size+"\n"+
-				tab+"\tType: DataReferenceBox"+"\n"+
-				tab+"\tVersion: "+ version+"\n"+
-				tab+"\tFlags: "+ flags+"\n"+
-				tab+"\tNumber of Entries: "+ entry_count+"\n";
+	public String toString() {
+		StringBuilder tab=new StringBuilder();
+		for(int i=0;i<struct_depth;i++) {
+			tab.append("\t");
+		}
+		return tab.toString()+"dref\n"+
+				tab.toString()+"\tSize: "+size+"\n"+
+				tab.toString()+"\tType: DataReferenceBox"+"\n"+
+				tab.toString()+"\tVersion: "+ version+"\n"+
+				tab.toString()+"\tFlags: "+ flags+"\n"+
+				tab.toString()+"\tNumber of Entries: "+ entry_count+"\n";
 	}
 
 }

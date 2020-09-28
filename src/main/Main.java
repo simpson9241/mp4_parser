@@ -13,11 +13,6 @@ public class Main {
 		//각 기능의 모듈화
 		//mdat 깔때 아스키 코드도 같이 까게 만들어놓기
 		//탭 스트링 빌더 클래스 안에 넣어버리거나 모듈화해서 함수로 만들기
-		
-//		File file=new File("video_960_30.mp4");
-//		if(file.isFile()) {
-//			System.out.println("파일 존재\n");
-//		}
 		long stream_position=0;
 		int mdat_position_flag=0;//먼저오면 0 나중에 오면 1
 		int ismdatafter=0;
@@ -28,8 +23,7 @@ public class Main {
 		ArrayList<boxes.FullBox> full_boxes = new ArrayList<>();
 		int box_count = 0;
 		int full_box_count = 0;
-		StringBuilder tab = new StringBuilder();
-		FileInputStream fis = new FileInputStream("video_960_30.mp4");
+		FileInputStream fis = new FileInputStream("BigBuckBunny.mp4");
 		byte[] size_byte = new byte[4];
 		byte[] type_byte = new byte[4];
 		byte[] mdat_storage;
@@ -40,7 +34,7 @@ public class Main {
 		long mdat_size=0;
 		long mdat_largesize=0;
 		
-
+		long v,f;
 		int sample_index = -1;
 		int stsc_index = 0;
 		int chunk_index = 0;
@@ -68,7 +62,6 @@ public class Main {
 				System.out.println(ftyp);
 				boxes.add(ftyp);
 				box_count++;
-				depth = 0;
 			} else if (type.equals("moov")) {
 				MovieBox moov = new MovieBox("moov");
 				moov.struct_depth=0;
@@ -76,7 +69,6 @@ public class Main {
 				System.out.println(moov);
 				boxes.add(moov);
 				box_count++;
-				depth = 0;
 				mdat_position_flag=1;
 				moov.start_position=stream_position;
 				moov.end_position=stream_position+size;
@@ -94,14 +86,8 @@ public class Main {
 				mvex.end_position=stream_position+size;
 				stream_position+=8;
 			}else if (type.equals("mehd")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-				
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
-				
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 				
 				MovieExtendsHeaderBox mehd = new MovieExtendsHeaderBox("mehd", v, f);
 				mehd.struct_depth=2;
@@ -114,13 +100,8 @@ public class Main {
 				mehd.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("trex")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-				
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 				TrackExtendsBox trex = new TrackExtendsBox("trex", v, f);
 				trex.struct_depth=2;
 				trex.size = size;
@@ -132,13 +113,8 @@ public class Main {
 				trex.end_position=stream_position+size;
 				stream_position+=size;
 			}else if (type.equals("sidx")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-				
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 				
 				SegmentIndexBox sidx = new SegmentIndexBox("sidx", v, f);
 				sidx.struct_depth=0;
@@ -154,13 +130,8 @@ public class Main {
 				sidx.end_position=stream_position+size;
 				stream_position+=size;
 			}else if (type.equals("tfdt")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-				
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 				
 				TrackFragmentBaseMediaDecodeTimeBox tfdt = new TrackFragmentBaseMediaDecodeTimeBox("tfdt", v, f);
 				tfdt.struct_depth=2;
@@ -185,13 +156,8 @@ public class Main {
 				moof.end_position=stream_position+size;
 				stream_position+=8;
 			}else if (type.equals("mfhd")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-				
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 				
 				MovieFragmentHeaderBox mfhd = new MovieFragmentHeaderBox("mfhd", v, f);
 				mfhd.struct_depth=1;
@@ -214,13 +180,8 @@ public class Main {
 				traf.end_position=stream_position+size;
 				stream_position+=8;
 			}else if (type.equals("tfhd")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-				
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 				
 				TrackFragmentHeaderBox tfhd = new TrackFragmentHeaderBox("mfhd", v, f);
 				tfhd.struct_depth=3;
@@ -233,13 +194,8 @@ public class Main {
 				tfhd.end_position=stream_position+size;
 				stream_position+=size;
 			}else if (type.equals("trun")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-				
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 				
 				TrackFragmentRunBox trun = new TrackFragmentRunBox("trun", v, f);
 				trun.struct_depth=3;
@@ -253,9 +209,7 @@ public class Main {
 				trun.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("mvhd")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
+				v = Util.getVersion(fis);
 				// flag 3바이트
 				fis.skip(3);
 				MovieHeaderBox mvhd = new MovieHeaderBox("mvhd", v, 0);
@@ -300,11 +254,7 @@ public class Main {
 				
 				free.size = size;
 				fis.skip(free.size - 8);
-				for (int i = 0; i < free.struct_depth; i++) {
-					tab.append("\t");
-				}
-				System.out.println(free.toString(tab.toString()));
-				tab.delete(0, tab.length());
+				System.out.println(free);
 				boxes.add(free);
 				box_count++;
 				free.start_position=stream_position;
@@ -341,11 +291,7 @@ public class Main {
 				
 				skip.size = size;
 				fis.skip(skip.size - 8);
-				for (int i = 0; i < skip.struct_depth; i++) {
-					tab.append("\t");
-				}
-				System.out.println(skip.toString(tab.toString()));
-				tab.delete(0, tab.length());
+				System.out.println(skip.toString());
 				boxes.add(skip);
 				box_count++;
 				skip.start_position=stream_position;
@@ -376,13 +322,8 @@ public class Main {
 				mfra.end_position=stream_position+size;
 				stream_position+=8;
 			}else if (type.equals("tfra")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-				
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 
 				TrackFragmentRandomAccessBox tfra = new TrackFragmentRandomAccessBox("tfra", v, f);
 				tfra.size = size;
@@ -401,13 +342,8 @@ public class Main {
 				tfra.end_position=stream_position+size;
 				stream_position+=size;
 			}else if (type.equals("mfro")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-				
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 
 				MovieFragmentRandomAccessOffsetBox mfro = new MovieFragmentRandomAccessOffsetBox("mfro", v, f);
 				mfro.size = size;
@@ -434,13 +370,8 @@ public class Main {
 				edts.end_position=stream_position+size;
 				stream_position+=8;
 			} else if (type.equals("elst")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-				
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 
 				EditListBox elst = new EditListBox("elst", v, f);
 				elst.size = size;
@@ -460,12 +391,8 @@ public class Main {
 				elst.end_position=stream_position+size;
 				stream_position+=size;
 			}else if (type.equals("tkhd")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 				TrackHeaderBox tkhd = new TrackHeaderBox("tkhd", v, f);
 				tkhd.size = size;
 				tkhd.SetTKHDBox(fis, cal);
@@ -502,11 +429,7 @@ public class Main {
 						}
 					}
 				}
-				for (int i = 0; i < udta.struct_depth; i++) {
-					tab.append("\t");
-				}
-				System.out.println(udta.toString(tab.toString()));
-				tab.delete(0, tab.length());
+				System.out.println(udta.toString());
 				boxes.add(udta);
 				box_count++;
 				udta.start_position=stream_position;
@@ -514,9 +437,7 @@ public class Main {
 				stream_position+=8;
 				
 			} else if (type.equals("mdhd")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
+				v = Util.getVersion(fis);
 				// flags set to 0
 				fis.skip(3);
 				MediaHeaderBox mdhd = new MediaHeaderBox("mdhd", v, 0);
@@ -530,9 +451,7 @@ public class Main {
 				stream_position+=size;
 			} else if (type.equals("hdlr")) {
 				depth++;
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
+				v = Util.getVersion(fis);
 				// Flags
 				fis.skip(3);
 				HandlerReferenceBox hdlr = new HandlerReferenceBox("hdlr", v, 0);
@@ -562,11 +481,7 @@ public class Main {
 				
 				hdlr.size = size;
 				hdlr.SetHDLRBox(fis);
-				for (int i = 0; i < hdlr.struct_depth; i++) {
-					tab.append("\t");
-				}
-				System.out.println(hdlr.toString(tab.toString()));
-				tab.delete(0, tab.length());
+				System.out.println(hdlr.toString());
 				full_boxes.add(hdlr);
 				full_box_count++;
 				depth--;
@@ -584,12 +499,8 @@ public class Main {
 				minf.end_position=stream_position+size;
 				stream_position+=8;
 			} else if (type.equals("vmhd")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 				boxes.VideoMediaHeaderBox vmhd = new boxes.VideoMediaHeaderBox("vmhd", v, f);
 				vmhd.size = size;
 				vmhd.SetVMHDBox(fis);
@@ -625,28 +536,14 @@ public class Main {
 					}
 				}
 				
-				
-				
-				for (int i = 0; i < dinf.struct_depth; i++) {
-					tab.append("\t");
-				}
-				System.out.println(dinf.toString(tab.toString()));
-				tab.delete(0, tab.length());
+				System.out.println(dinf.toString());
 				dinf.start_position=stream_position;
 				dinf.end_position=stream_position+size;
 				stream_position+=8;
 			} else if (type.equals("dref")) {
-				
-				
-				
-				
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
 
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 
 				DataReferenceBox dref = new DataReferenceBox("dref", v, f);
 				dref.size = size;
@@ -664,19 +561,13 @@ public class Main {
 						}
 					}
 				}
-				
-				for (int i = 0; i < dref.struct_depth; i++) {
-					tab.append("\t");
-				}
 
-				System.out.println(dref.toString(tab.toString()));
+				System.out.println(dref.toString());
 
 				if (dref.entry_count != 0) {
 					dref.SetDREFBox_Table(fis);
-					dref.DREFBox_Table_Print(tab.toString());
+					dref.DREFBox_Table_Print();
 				}
-				tab.delete(0, tab.length());
-
 				dref.start_position=stream_position;
 				dref.end_position=stream_position+size;
 				stream_position+=size;
@@ -734,14 +625,8 @@ public class Main {
 				System.out.println(mp4a);
 				
 			}else if (type.equals("stts")) {
-
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 
 				TimetoSampleBox stts = new TimetoSampleBox("stts", v, f);
 				stts.size = size;
@@ -761,13 +646,8 @@ public class Main {
 				stts.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("ctts")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-				
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 
 				CompositionOffsetBox ctts = new CompositionOffsetBox("ctts", v, f);
 				ctts.size = size;
@@ -787,13 +667,8 @@ public class Main {
 				ctts.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("sbgp")) {
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-				
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 
 				SampletoGroupBox sbgp = new SampletoGroupBox("sbgp", v, f);
 				sbgp.size = size;
@@ -816,31 +691,20 @@ public class Main {
 						}
 					}
 				}
-				
-				for (int i = 0; i < sbgp.struct_depth; i++) {
-					tab.append("\t");
-				}
 
-				System.out.println(sbgp.toString(tab.toString()));
+				System.out.println(sbgp.toString());
 
 				if (sbgp.entry_count != 0) {
 					sbgp.SetSBGPBox_Table(fis);
-					sbgp.SBGPBox_Table_Print(tab.toString());
+					sbgp.SBGPBox_Table_Print();
 				}
 
-				tab.delete(0, tab.length());
 				sbgp.start_position=stream_position;
 				sbgp.end_position=stream_position+size;
 				stream_position+=size;
 			}else if (type.equals("stss")) {
-
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 
 				SyncSampleBox stss = new SyncSampleBox("stss", v, f);
 				stss.size = size;
@@ -860,14 +724,8 @@ public class Main {
 				stss.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("stsc")) {
-
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 
 				SampletoChunkBox stsc = new SampletoChunkBox("stsc", v, f);
 				stsc.size = size;
@@ -888,14 +746,8 @@ public class Main {
 				stsc.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("stsz")) {
-
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 
 				SampleSizeBox stsz = new SampleSizeBox("stsz", v, f);
 				stsz.size = size;
@@ -916,14 +768,8 @@ public class Main {
 				stsz.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("smhd")) {
-
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 
 				SoundMediaHeaderBox smhd = new SoundMediaHeaderBox("smhd", v, f);
 
@@ -940,14 +786,8 @@ public class Main {
 				smhd.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("stco")) {
-
-				byte[] version = new byte[1];
-				fis.read(version);
-				long v = Util.ByteArrayToLong(version);
-
-				byte[] flags = new byte[3];
-				fis.read(flags);
-				long f = Util.ByteArrayToLong(flags);
+				v = Util.getVersion(fis);
+				f = Util.getFlags(fis);
 
 				ChunkOffsetBox stco = new ChunkOffsetBox("stco", v, f);
 				stco.size = size;
@@ -1018,7 +858,7 @@ public class Main {
 									stsc_index++;
 								}
 							}
-							InputStream sample_stream = new FileInputStream("video_960_30.mp4");
+							InputStream sample_stream = new FileInputStream("BigBuckBunny.mp4");
 							sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 							sample_offset = stco.chunk_offset_table.get(chunk_index);
 
@@ -1058,12 +898,7 @@ public class Main {
 							}
 							sample_stream.close();
 						}
-						stsc = null;
-						stsz = null;
-						stco = null;
-						stts = null;
-						stss = null;
-
+						mdat.SetBoxesNull(stsc, stsz, stco, stts, stss);
 //						for(int k=0;k<sample_index;k++) {
 //							mdat.MDATBox_Datas_Print(k);
 //						}
@@ -1100,7 +935,7 @@ public class Main {
 									stsc_index++;
 								}
 							}
-							InputStream sample_stream = new FileInputStream("video_960_30.mp4");
+							InputStream sample_stream = new FileInputStream("BigBuckBunny.mp4");
 							sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 							sample_offset = stco.chunk_offset_table.get(chunk_index);
 
@@ -1133,11 +968,7 @@ public class Main {
 
 							sample_stream.close();
 						}
-						stsc = null;
-						stsz = null;
-						stco = null;
-						stts = null;
-						stss = null;
+						mdat.SetBoxesNull(stsc, stsz, stco, stts, stss);
 
 //						for(int k=0;k<sample_index;k++) {
 //							mdat.MDATBox_Datas_Print(k);
@@ -1258,7 +1089,7 @@ public class Main {
 								stsc_index++;
 							}
 						}
-						InputStream sample_stream = new FileInputStream("video_960_30.mp4");
+						InputStream sample_stream = new FileInputStream("BigBuckBunny.mp4");
 						sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 						sample_offset = stco.chunk_offset_table.get(chunk_index);
 
@@ -1298,11 +1129,7 @@ public class Main {
 						}
 						sample_stream.close();
 					}
-					stsc = null;
-					stsz = null;
-					stco = null;
-					stts = null;
-					stss = null;
+					mdat.SetBoxesNull(stsc, stsz, stco, stts, stss);
 
 //					for(int k=0;k<sample_index;k++) {
 //						mdat.MDATBox_Datas_Print(k);
@@ -1340,7 +1167,7 @@ public class Main {
 								stsc_index++;
 							}
 						}
-						InputStream sample_stream = new FileInputStream("video_960_30.mp4");
+						InputStream sample_stream = new FileInputStream("BigBuckBunny.mp4");
 						sample_stream.skip(stco.chunk_offset_table.get(chunk_index));
 						sample_offset = stco.chunk_offset_table.get(chunk_index);
 
@@ -1373,11 +1200,7 @@ public class Main {
 
 						sample_stream.close();
 					}
-					stsc = null;
-					stsz = null;
-					stco = null;
-					stts = null;
-					stss = null;
+					mdat.SetBoxesNull(stsc, stsz, stco, stts, stss);
 
 //					for(int k=0;k<sample_index;k++) {
 //						mdat.MDATBox_Datas_Print(k);

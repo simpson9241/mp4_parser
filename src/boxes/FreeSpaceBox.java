@@ -7,9 +7,13 @@ public class FreeSpaceBox extends Box{
 		// TODO Auto-generated constructor stub
 	}
 	
-	public String toString(String tab) {
-		return tab+"free\n"+
-				tab+"\tSize: "+size+"\n"+
-				tab+"\tType: FreeSpaceBox\n";
+	public String toString() {
+		StringBuilder tab=new StringBuilder();
+		for(int i=0;i<struct_depth;i++) {
+			tab.append("\t");
+		}
+		return tab.toString()+"free\n"+
+				tab.toString()+"\tSize: "+size+"\n"+
+				tab.toString()+"\tType: FreeSpaceBox\n";
 	}
 }

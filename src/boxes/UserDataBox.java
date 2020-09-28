@@ -7,9 +7,13 @@ public class UserDataBox extends Box{
 		// TODO Auto-generated constructor stub
 	}
 
-	public String toString(String tab) {
-		return tab+"udta\n"+
-				tab+"\tSize: "+size+"\n"+
-				tab+"\tType: UserDataBox\n";
+	public String toString() {
+		StringBuilder tab=new StringBuilder();
+		for(int i=0;i<struct_depth;i++) {
+			tab.append("\t");
+		}
+		return tab.toString()+"udta\n"+
+				tab.toString()+"\tSize: "+size+"\n"+
+				tab.toString()+"\tType: UserDataBox\n";
 	}
 }

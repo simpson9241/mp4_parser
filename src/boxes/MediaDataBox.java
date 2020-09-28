@@ -82,6 +82,12 @@ public class MediaDataBox extends Box{
 		}
 	}
 	
-	
+	public void SetBoxesNull(SampletoChunkBox stsc,SampleSizeBox stsz, ChunkOffsetBox stco, TimetoSampleBox stts, SyncSampleBox stss) {
+		stsc=null;
+		stsz=null;
+		stco=null;
+		stts=null;
+		stss=null;
+	}
 
 }
