@@ -13,7 +13,7 @@ public class Main {
 		//각 기능의 모듈화
 		//mdat 깔때 아스키 코드도 같이 까게 만들어놓기
 		//탭 스트링 빌더 클래스 안에 넣어버리거나 모듈화해서 함수로 만들기
-		String source="output.mp4";
+		String source="BigBuckBunny.mp4";
 		long stream_position=0;
 		int mdat_position_flag=0;//먼저오면 0 나중에 오면 1
 		int ismdatafter=0;
@@ -220,7 +220,6 @@ public class Main {
 				System.out.println(mvhd);
 				full_boxes.add(mvhd);
 				full_box_count++;
-				depth = 1;
 				mvhd.start_position=stream_position;
 				mvhd.end_position=stream_position+size;
 				stream_position+=size;
@@ -389,7 +388,6 @@ public class Main {
 				mdhd.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("hdlr")) {
-				depth++;
 				v = Util.getVersion(fis);
 				// Flags
 				fis.skip(3);
@@ -400,7 +398,6 @@ public class Main {
 				System.out.println(hdlr.toString());
 				full_boxes.add(hdlr);
 				full_box_count++;
-				depth--;
 				hdlr.start_position=stream_position;
 				hdlr.end_position=stream_position+size;
 				stream_position+=size;
@@ -410,7 +407,6 @@ public class Main {
 				System.out.println(minf);
 				boxes.add(minf);
 				box_count++;
-				depth = 3;
 				minf.start_position=stream_position;
 				minf.end_position=stream_position+size;
 				stream_position+=8;
@@ -427,7 +423,6 @@ public class Main {
 				vmhd.end_position=stream_position+size;
 				stream_position+=size;
 			} else if (type.equals("dinf")) {
-				depth++;
 				DataInformationBox dinf = new DataInformationBox("dinf");
 				dinf.size = size;
 
@@ -471,9 +466,6 @@ public class Main {
 
 				boxes.add(stbl);
 				box_count++;
-
-				depth = 4;
-				
 				stbl.start_position=stream_position;
 				stbl.end_position=stream_position+size;
 				stream_position+=8;
@@ -803,11 +795,9 @@ public class Main {
 							sample_stream.close();
 						}
 						mdat.SetBoxesNull(stsc, stsz, stco, stts, stss);
-
 //						for(int k=0;k<sample_index;k++) {
 //							mdat.MDATBox_Datas_Print(k);
 //						}
-//						
 						for (int k = video_sample_count; k < video_sample_count + 5; k++) {
 							mdat.MDATBox_Datas_Print(k);
 						}
@@ -815,7 +805,6 @@ public class Main {
 				}
 				boxes.add(mdat);
 				box_count++;
-				depth = 0;
 			}else if (type.equals("mdat")&&(fragment_flag==1)&&(mdat_position_flag==1)) { //fmp4 이며 mdat이 제일 뒤에 오는 경우
 				MediaDataBox mdat = new MediaDataBox("mdat");
 				mdat.size =size;
@@ -831,8 +820,6 @@ public class Main {
 				} else {
 					System.out.println("mdat\n" + "Size: " + mdat.size + "\n" + "Type: MediaDataBox\n");
 				}
-				
-				//mdat 까기
 				
 				TrackFragmentRunBox trun=null;
 				for(int i=full_box_count-1;i>=0;i--) {
@@ -851,7 +838,6 @@ public class Main {
 				
 				boxes.add(mdat);
 				box_count++;
-				depth = 0;
 			} else if(type.equals("mdat")&&(mdat_position_flag)==0) {
 				ismdatafter=1;
 				mdat_size=size;
@@ -935,11 +921,9 @@ public class Main {
 						sample_stream.close();
 					}
 					mdat.SetBoxesNull(stsc, stsz, stco, stts, stss);
-
 //					for(int k=0;k<sample_index;k++) {
 //						mdat.MDATBox_Datas_Print(k);
 //					}
-//					
 					for (int k = 0; k < 5; k++) {
 						mdat.MDATBox_Datas_Print(k);
 					}
@@ -993,7 +977,6 @@ public class Main {
 //					for(int k=0;k<sample_index;k++) {
 //						mdat.MDATBox_Datas_Print(k);
 //					}
-//					
 					for (int k = video_sample_count; k < video_sample_count + 5; k++) {
 						mdat.MDATBox_Datas_Print(k);
 					}
@@ -1001,10 +984,7 @@ public class Main {
 			}
 			boxes.add(mdat);
 			box_count++;
-			depth = 0;
 		}
-		
-		
 		System.out.println("\nFinished");
 	}
 }
